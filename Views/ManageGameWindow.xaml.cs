@@ -1,14 +1,14 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using OptiscalerManager.Models;
+using OptiscalerClient.Models;
 using System.Collections.ObjectModel;
 
-namespace OptiscalerManager.Views
+namespace OptiscalerClient.Views
 {
     public partial class ManageGameWindow : Window
     {

@@ -1,10 +1,10 @@
-# ✦ OptiScaler Manager
+﻿# ✦ OptiScaler Client
 
-[![GitHub Release](https://img.shields.io/github/v/release/Agustinm28/Optiscaler-Manager?style=flat-square&color=8A2BE2)](https://github.com/Agustinm28/Optiscaler-Manager/releases/tag/OptiscalerManager-1.0.0)
+[![GitHub Release](https://img.shields.io/github/v/release/Agustinm28/Optiscaler-Client?style=flat-square&color=8A2BE2)](https://github.com/Agustinm28/Optiscaler-Client/releases/tag/OptiscalerClient-1.0.0)
 [![License: GPL](https://img.shields.io/badge/License-GPL-yellow.svg?style=flat-square)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 
-**OptiScaler Manager** is a modern, high-performance desktop utility designed to simplify the installation, management, and update of the **OptiScaler** mod across your entire game library. Built with **C#** and **WPF**.
+**OptiScaler Client** is a modern, high-performance desktop utility designed to simplify the installation, management, and update of the **OptiScaler** mod across your entire game library. Built with **C#** and **WPF**.
 
 ---
 
@@ -48,15 +48,15 @@ Follow these simple steps to enhance your games:
 
 ## 🛠️ Installation & Requirements
 
-1.  Download the latest version from the [Releases](https://github.com/Agustinm28/Optiscaler-Manager/releases/tag/OptiscalerManager-1.0.0) page.
-2.  Run `OptiscalerManager.exe`.
+1.  Download the latest version from the [Releases](https://github.com/Agustinm28/Optiscaler-Client/releases/tag/OptiscalerClient-1.0.0) page.
+2.  Run `OptiscalerClient.exe`.
 3.  **Requirements**: Windows 10/11 is required. The app is self-contained, so no external .NET runtime installation is needed.
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! If you'd like to improve OptiScaler Manager:
+We welcome contributions! If you'd like to improve OptiScaler Client:
 
 1.  **Fork** the project.
 2.  Create your **Feature Branch** (`git checkout -b feature/AmazingFeature`).

@@ -1,10 +1,10 @@
-<Window x:Class="OptiscalerManager.Views.MainWindow"
+﻿<Window x:Class="OptiscalerClient.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:OptiscalerManager"
-        xmlns:converters="clr-namespace:OptiscalerManager.Converters"
+        xmlns:local="clr-namespace:OptiscalerClient"
+        xmlns:converters="clr-namespace:OptiscalerClient.Converters"
         mc:Ignorable="d"
         Title="{DynamicResource TxtAppTitle}"
         Height="720" Width="1280"
@@ -541,10 +541,10 @@
                          <TextBlock Text="{DynamicResource TxtAboutTitle}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource BrTextPrimary}" Margin="0,0,0,12"/>
                          <Border Background="{StaticResource BrBgSurface}" BorderBrush="{StaticResource BrBorderSubtle}" BorderThickness="1" CornerRadius="{StaticResource RadiusMedium}" Padding="16,12">
                              <StackPanel>
-                                 <!-- Optiscaler Manager -->
+                                 <!-- Optiscaler Client -->
                                  <Grid Margin="0,0,0,12">
                                      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                     <TextBlock Grid.Column="0" Text="Optiscaler Manager" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource BrTextPrimary}" VerticalAlignment="Center"/>
+                                     <TextBlock Grid.Column="0" Text="Optiscaler Client" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource BrTextPrimary}" VerticalAlignment="Center"/>
                                      <TextBlock Grid.Column="1" x:Name="TxtAppVersion" Text="v0.1.0" FontWeight="Bold" Foreground="{StaticResource BrAccent}" VerticalAlignment="Center"/>
                                  </Grid>
                                  

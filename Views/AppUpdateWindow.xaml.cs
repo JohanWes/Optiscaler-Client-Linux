@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Windows;
 
-namespace OptiscalerManager.Views;
+namespace OptiscalerClient.Views;
 
 public partial class AppUpdateWindow : Window
 {
