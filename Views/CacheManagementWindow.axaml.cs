@@ -56,7 +56,15 @@ namespace OptiscalerClient.Views
             var txtCacheInfo = this.FindControl<TextBlock>("TxtCacheInfo");
             if (txtCacheInfo != null)
             {
-                txtCacheInfo.Text = $"{versions.Count} versions stored locally.";
+                if (versions.Count == 1)
+                {
+                    txtCacheInfo.Text = Application.Current?.FindResource("TxtVersionStored") as string ?? "1 version stored locally.";
+                }
+                else
+                {
+                    var format = Application.Current?.FindResource("TxtVersionsStored") as string ?? "{0} versions stored locally.";
+                    txtCacheInfo.Text = string.Format(format, versions.Count);
+                }
             }
 
             if (!versions.Any())
@@ -98,7 +106,7 @@ namespace OptiscalerClient.Views
             {
                 stack.Children.Add(new TextBlock
                 {
-                    Text = "Currently selected",
+                    Text = Application.Current?.FindResource("TxtCurrentSelection") as string ?? "Currently selected",
                     FontSize = 10,
                     Foreground = Application.Current?.FindResource("BrAccent") as IBrush ?? Brushes.DeepSkyBlue
                 });
@@ -109,7 +117,7 @@ namespace OptiscalerClient.Views
 
             var btnDelete = new Button
             {
-                Content = "Delete",
+                Content = Application.Current?.FindResource("TxtDeletePlain") as string ?? "Delete",
                 Classes = { "BtnSecondary" },
                 Padding = new Thickness(12, 4),
                 FontSize = 11,

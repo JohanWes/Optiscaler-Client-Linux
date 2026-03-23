@@ -22,6 +22,7 @@ namespace OptiscalerClient.Models
         public RepositoryConfig NukemFG { get; set; } = new();
         public string Language { get; set; } = "en";
         public bool Debug { get; set; } = false;
+        public bool AutoScan { get; set; } = true;
     }
 
     /// <summary>

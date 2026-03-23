@@ -61,6 +61,9 @@
     <x:String x:Key="TxtDeletedSuccessFormat">OptiScaler v{0} excluído com sucesso.</x:String>
     <x:String x:Key="TxtFailedDeleteFormat">Falha ao excluir a versão: {0}</x:String>
     <x:String x:Key="TxtError">Erro</x:String>
+    <x:String x:Key="TxtCurrentSelection">Selecionado atualmente</x:String>
+    <x:String x:Key="TxtVersionStored">1 versão armazenada localmente.</x:String>
+    <x:String x:Key="TxtVersionsStored">{0} versões armazenadas localmente.</x:String>
 
     <!-- ComponentInfoWindow -->
     <x:String x:Key="TxtComponentTitle">Versões dos componentes</x:String>
@@ -85,6 +88,8 @@
     <x:String x:Key="TxtUpdateOptiManual">↑ Atualização manual / Reinstalação</x:String>
     <x:String x:Key="TxtFakenvapiTip">Necessário em GPUs AMD/Intel para habilitar DLSS FG com o mod do Nukem</x:String>
     <x:String x:Key="TxtNukemTip">Mod DLSSG-para-FSR3 do Nukem para geração de quadros</x:String>
+    <x:String x:Key="TxtFakenvapiHelpTip">Engana o jogo fazendo-o detectar uma placa de vídeo NVIDIA, permitindo ignorar restrições de hardware e habilitar tecnologias DLSS em GPUs AMD ou Intel.</x:String>
+    <x:String x:Key="TxtNukemHelpTip">Um mod do Nukem que substitui a geração de quadros nativa do DLSS pela geração de quadros do AMD FSR 3, habilitando o frame generation em qualquer GPU compatível.</x:String>
 
     <x:String x:Key="TxtOptiInstalled">OptiScaler instalado</x:String>
     <x:String x:Key="TxtOptiNotInstalled">Não instalado</x:String>
@@ -140,5 +145,17 @@
     <x:String x:Key="TxtNoGpuTip">Nenhuma GPU foi detectada neste sistema</x:String>
     <x:String x:Key="TxtGpuFail">⚠️ Falha ao detectar GPU</x:String>
     <x:String x:Key="TxtGpuFailTipFormat">Erro ao detectar GPU: {0}</x:String>
+    <x:String x:Key="TxtAutoScan">Busca Automática ao Iniciar</x:String>
+    <x:String x:Key="TxtAutoScanDesc">Busca automaticamente por jogos se a lista estiver vazia ao iniciar.</x:String>
+
+    <!-- App Update -->
+    <x:String x:Key="TxtUpdateAvailableTitle">Atualização disponível</x:String>
+    <x:String x:Key="TxtUpdateAvailableMsg">Uma nova versão do Optiscaler Client está disponível (v{0}).&#x0a;Deseja baixar e instalar agora?</x:String>
+    <x:String x:Key="TxtUpdatingApp">Atualizando aplicativo...</x:String>
+    <x:String x:Key="TxtUpdateReady">Atualização pronta</x:String>
+    <x:String x:Key="TxtUpdateReadyMsg">A atualização foi baixada. O aplicativo será reiniciado agora para concluir a instalação.</x:String>
+    <x:String x:Key="TxtUpdateError">Erro na atualização</x:String>
+    <x:String x:Key="TxtNoUpdateFound">O aplicativo já está atualizado.</x:String>
+    <x:String x:Key="TxtUpdateCheckError">Houve um problema ao verificar atualizações. Tente novamente mais tarde.</x:String>
 
 </ResourceDictionary>

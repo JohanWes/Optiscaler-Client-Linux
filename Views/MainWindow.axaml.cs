@@ -27,6 +27,7 @@ namespace OptiscalerClient.Views
         private readonly ComponentManagementService _componentService;
         private readonly IGpuDetectionService _gpuService;
 
+        private GpuInfo? _lastDetectedGpu;
         private ScrollViewer? _gameListScrollViewer;
         private bool _isInitializingLanguage = true;
 
@@ -90,7 +91,7 @@ namespace OptiscalerClient.Views
             _ = LoadGpuInfoAsync();
             _ = CheckUpdatesOnStartupAsync();
 
-            if (!hadSavedGames)
+            if (!hadSavedGames && _componentService.Config.AutoScan)
             {
                 BtnScan_Click(null!, null!);
             }
@@ -199,6 +200,11 @@ namespace OptiscalerClient.Views
                     }
                 }
             }
+            var tglAutoScan = this.FindControl<ToggleSwitch>("TglAutoScan");
+            if (tglAutoScan != null)
+            {
+                tglAutoScan.IsChecked = _componentService.Config.AutoScan;
+            }
             _isInitializingLanguage = false;
         }
 
@@ -222,6 +228,16 @@ namespace OptiscalerClient.Views
         {
             var cacheWindow = new CacheManagementWindow(this);
             await cacheWindow.ShowDialog<object>(this);
+        }
+
+        private void TglAutoScan_IsCheckedChanged(object sender, RoutedEventArgs e)
+        {
+            if (_isInitializingLanguage) return;
+            if (sender is ToggleSwitch tgl)
+            {
+                _componentService.Config.AutoScan = tgl.IsChecked ?? true;
+                _componentService.SaveConfiguration();
+            }
         }
 
         private async Task CheckUpdatesOnStartupAsync()
@@ -667,19 +683,29 @@ namespace OptiscalerClient.Views
             {
                 var txtGpuInfo = this.FindControl<TextBlock>("TxtGpuInfo");
                 if (txtGpuInfo == null) return;
-
-                GpuInfo? gpu = await Task.Run(() =>
+                
+                GpuInfo? gpu;
+                if (_lastDetectedGpu != null)
                 {
-                    if (OperatingSystem.IsWindows() && _gpuService != null)
+                    gpu = _lastDetectedGpu;
+                }
+                else
+                {
+                    txtGpuInfo.Text = GetResourceString("TxtDefaultGpu", "Detecting GPU...");
+                    gpu = await Task.Run(() =>
                     {
-                        try
+                        if (OperatingSystem.IsWindows() && _gpuService != null)
                         {
-                            return _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                            try
+                            {
+                                return _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                            }
+                            catch { return null; }
                         }
-                        catch { return null; }
-                    }
-                    return null;
-                });
+                        return null;
+                    });
+                    _lastDetectedGpu = gpu;
+                }
 
                 Dispatcher.UIThread.Post(() =>
                 {

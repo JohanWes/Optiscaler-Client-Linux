@@ -249,7 +249,8 @@
                                            FontSize="{StaticResource FontSizeBody}"
                                            Width="65"/>
                                 <ComboBox Name="CmbOptiVersion"
-                                          Width="220"
+                                          Width="180"
+                                          Classes="BtnSelector"
                                           SelectedIndex="0"
                                           VerticalContentAlignment="Center" />
                             </StackPanel>
@@ -262,6 +263,7 @@
                                            Width="65"/>
                             <ComboBox Name="CmbInjectionMethod"
                                       Width="130"
+                                      Classes="BtnSelector"
                                       SelectedIndex="0"
                                       VerticalContentAlignment="Center">
                                 <ComboBoxItem Content="dxgi.dll"     Tag="dxgi.dll"/>

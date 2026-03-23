@@ -61,6 +61,9 @@
     <x:String x:Key="TxtDeletedSuccessFormat">OptiScaler v{0} deleted successfully.</x:String>
     <x:String x:Key="TxtFailedDeleteFormat">Failed to delete version: {0}</x:String>
     <x:String x:Key="TxtError">Error</x:String>
+    <x:String x:Key="TxtCurrentSelection">Currently selected</x:String>
+    <x:String x:Key="TxtVersionStored">1 version stored locally.</x:String>
+    <x:String x:Key="TxtVersionsStored">{0} versions stored locally.</x:String>
 
     <!-- ComponentInfoWindow -->
     <x:String x:Key="TxtComponentTitle">Component Versions</x:String>
@@ -144,6 +147,8 @@
     <x:String x:Key="TxtNoGpuTip">No GPU was detected on this system</x:String>
     <x:String x:Key="TxtGpuFail">⚠️ GPU detection failed</x:String>
     <x:String x:Key="TxtGpuFailTipFormat">Error detecting GPU: {0}</x:String>
+    <x:String x:Key="TxtAutoScan">Auto-Scan on Startup</x:String>
+    <x:String x:Key="TxtAutoScanDesc">Automatically scan for games if the list is empty on startup.</x:String>
 
     <!-- App Update -->
     <x:String x:Key="TxtUpdateAvailableTitle">Update Available</x:String>

@@ -1,5 +1,6 @@
 using Microsoft.Win32;
 using OptiscalerClient.Models;
+using OptiscalerClient.Views;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,7 @@ public class SteamScanner
             try
             {
                 var steamappsPath = Path.Combine(libraryPath, "steamapps");
+                DebugWindow.Log($"[Steam] Scanning library: {steamappsPath}");
                 if (!Directory.Exists(steamappsPath)) continue;
 
                 var manifestFiles = Directory.GetFiles(steamappsPath, "appmanifest_*.acf");

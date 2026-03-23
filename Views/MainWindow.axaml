@@ -75,8 +75,8 @@
 
                 <!-- Bottom actions: Settings, Help -->
                 <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center">
-                    <RadioButton Name="NavHelp" GroupName="SidebarNav" Classes="NavBtnStyle" Content="&#xE897;" ToolTip.Tip="Help" Click="NavHelp_Click"/>
-                    <RadioButton Name="NavSettings" GroupName="SidebarNav" Classes="NavBtnStyle" Content="&#xE713;" ToolTip.Tip="Settings" Click="NavSettings_Click"/>
+                    <RadioButton Name="NavHelp" GroupName="SidebarNav" Classes="NavBtnStyle" Content="&#xE897;" ToolTip.Tip="{DynamicResource TxtAboutTitle}" Click="NavHelp_Click"/>
+                    <RadioButton Name="NavSettings" GroupName="SidebarNav" Classes="NavBtnStyle" Content="&#xE713;" ToolTip.Tip="{DynamicResource TxtSettingsTitle}" Click="NavSettings_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -168,7 +168,6 @@
                                      CornerRadius="{StaticResource RadiusMedium}"
                                      Padding="12,5" Margin="0,0,10,0">
                                  <TextBlock Name="TxtGpuInfo"
-                                            Text="{DynamicResource TxtDefaultGpu}"
                                             FontSize="{StaticResource FontSizeCaption}"
                                             Foreground="{StaticResource BrTextSecondary}"
                                             VerticalAlignment="Center"/>
@@ -450,6 +449,38 @@
                          </Grid>
                      </Border>
          
+                     <Border Background="{StaticResource BrBgCard}"
+                             BorderBrush="{StaticResource BrBorderSubtle}"
+                             BorderThickness="1"
+                             CornerRadius="{StaticResource RadiusLarge}"
+                             Padding="20,16"
+                             Margin="0,16,0,0">
+                         <Grid>
+                             <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
+                                 <ColumnDefinition Width="Auto"/>
+                             </Grid.ColumnDefinitions>
+                             
+                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                 <TextBlock Text="{DynamicResource TxtAutoScan}"
+                                            FontWeight="SemiBold"
+                                            Foreground="{StaticResource BrTextPrimary}"/>
+                                 <TextBlock Text="{DynamicResource TxtAutoScanDesc}"
+                                            Foreground="{StaticResource BrTextSecondary}"
+                                            TextWrapping="Wrap"
+                                            Margin="0,4,16,0"
+                                            FontSize="{StaticResource FontSizeCaption}"/>
+                             </StackPanel>
+                             
+                             <ToggleSwitch Name="TglAutoScan"
+                                           Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           OnContent="" OffContent=""
+                                           IsChecked="True"
+                                           IsCheckedChanged="TglAutoScan_IsCheckedChanged"/>
+                         </Grid>
+                     </Border>
+ 
                      <!-- Language -->
                      <Border Background="{StaticResource BrBgCard}"
                              BorderBrush="{StaticResource BrBorderSubtle}"
@@ -554,7 +585,7 @@
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="Fakenvapi" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource BrTextPrimary}" VerticalAlignment="Center"/>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Name="BtnUpdateFakenvapi" Content="Check Updates" Classes="BtnBase" Padding="10,4" Margin="0,0,12,0" VerticalAlignment="Center" Click="BtnUpdateFakenvapi_Click"/>
+                                        <Button Name="BtnUpdateFakenvapi" Content="{DynamicResource TxtCheckUpdatesBtn}" Classes="BtnBase" Padding="10,4" Margin="0,0,12,0" VerticalAlignment="Center" Click="BtnUpdateFakenvapi_Click"/>
                                         <TextBlock Name="TxtFakeVersion" FontWeight="Bold" Foreground="{StaticResource BrAccent}" VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
                                     </StackPanel>
                                  </Grid>
@@ -564,7 +595,7 @@
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="NukemFG" FontWeight="SemiBold" FontSize="15" Foreground="{StaticResource BrTextPrimary}" VerticalAlignment="Center"/>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Name="BtnUpdateNukemFG" Content="Update" Classes="BtnBase" Padding="10,4" Margin="0,0,12,0" VerticalAlignment="Center" Click="BtnUpdateNukemFG_Click"/>
+                                        <Button Name="BtnUpdateNukemFG" Content="{DynamicResource TxtBtnUpdate}" Classes="BtnBase" Padding="10,4" Margin="0,0,12,0" VerticalAlignment="Center" Click="BtnUpdateNukemFG_Click"/>
                                         <TextBlock Name="TxtNukemVersion" FontWeight="Bold" Foreground="{StaticResource BrAccent}" VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
                                     </StackPanel>
                                  </Grid>

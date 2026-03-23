@@ -1,4 +1,5 @@
 using OptiscalerClient.Models;
+using OptiscalerClient.Views;
 using System.IO;
 using System.Runtime.Versioning;
 
@@ -37,6 +38,7 @@ public class GameScannerService
         {
             var games = new List<Game>();
             var analyzer = new GameAnalyzerService();
+            DebugWindow.Log("[Scanner] Executing global game scan across all platforms...");
 
             void ProcessGames(IEnumerable<Game> scannedGames)
             {
@@ -50,45 +52,54 @@ public class GameScannerService
 
             try
             {
+                DebugWindow.Log("[Scanner] Scanning Steam library...");
                 ProcessGames(_steamScanner.Scan());
             }
-            catch { /* Log error */ }
+            catch (Exception ex) { DebugWindow.Log($"[Scanner] Steam scan error: {ex.Message}"); }
 
             try
             {
+                DebugWindow.Log("[Scanner] Scanning Epic Games library...");
                 ProcessGames(_epicScanner.Scan());
             }
-            catch { /* Log error */ }
+            catch (Exception ex) { DebugWindow.Log($"[Scanner] Epic scan error: {ex.Message}"); }
 
             try
             {
+                DebugWindow.Log("[Scanner] Scanning GOG library...");
                 ProcessGames(_gogScanner.Scan());
             }
-            catch { /* Log error */ }
+            catch (Exception ex) { DebugWindow.Log($"[Scanner] GOG scan error: {ex.Message}"); }
 
             try
             {
+                DebugWindow.Log("[Scanner] Scanning Xbox library (MS Store)...");
                 ProcessGames(_xboxScanner.Scan());
             }
-            catch { /* Log error */ }
+            catch (Exception ex) { DebugWindow.Log($"[Scanner] Xbox scan error: {ex.Message}"); }
 
             try
             {
+                DebugWindow.Log("[Scanner] Scanning EA App library...");
                 ProcessGames(_eaScanner.Scan());
             }
-            catch { /* Log error */ }
+            catch (Exception ex) { DebugWindow.Log($"[Scanner] EA scan error: {ex.Message}"); }
 
             try
             {
+                DebugWindow.Log("[Scanner] Scanning Battle.net library...");
                 ProcessGames(_battleNetScanner.Scan());
             }
-            catch { /* Log error */ }
+            catch (Exception ex) { DebugWindow.Log($"[Scanner] Battle.net scan error: {ex.Message}"); }
 
             try
             {
+                DebugWindow.Log("[Scanner] Scanning Ubisoft Connect library...");
                 ProcessGames(_ubisoftScanner.Scan());
             }
-            catch { /* Log error */ }
+            catch (Exception ex) { DebugWindow.Log($"[Scanner] Ubisoft scan error: {ex.Message}"); }
+
+            DebugWindow.Log($"[Scanner] Scan completed. Found {games.Count} valid games.");
 
             return games.OrderBy(g => g.Platform).ThenBy(g => g.Name).ToList();
         });

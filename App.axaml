@@ -60,6 +60,20 @@
             <CornerRadius x:Key="RadiusLarge">12</CornerRadius>
             <CornerRadius x:Key="RadiusXL">16</CornerRadius>
             <CornerRadius x:Key="RadiusPill">50</CornerRadius>
+
+            <!-- Override FluentTheme default Resource Dictionary keys for ComboBox -->
+            <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource BgSurfaceColor}" />
+            <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource BgSurfaceColor}" />
+            <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="{StaticResource BgElevatedColor}" />
+            <SolidColorBrush x:Key="ComboBoxBackgroundDisabled" Color="{StaticResource BgBaseColor}" />
+            <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{StaticResource BorderSubtleColor}" />
+            <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="{StaticResource AccentPrimaryColor}" />
+            <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="{StaticResource AccentPrimaryPressedColor}" />
+            <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="{StaticResource BgCardColor}" />
+            <SolidColorBrush x:Key="ComboBoxDropDownBorderBrush" Color="{StaticResource BorderDefaultColor}" />
+            <SolidColorBrush x:Key="ComboBoxItemBackgroundSelected" Color="{StaticResource AccentPrimaryColor}" />
+            <SolidColorBrush x:Key="ComboBoxItemBackgroundPointerOver" Color="{StaticResource BgElevatedColor}" />
+            <!-- End overrides -->
         </ResourceDictionary>
     </Application.Resources>
 
@@ -157,7 +171,7 @@
             <Setter Property="FontFamily"         Value="{StaticResource FontPrimary}"/>
             <Setter Property="FontSize"           Value="{StaticResource FontSizeBody}"/>
             <Setter Property="Foreground"         Value="{StaticResource BrTextPrimary}"/>
-            <Setter Property="Background"         Value="{StaticResource BrBgElevated}"/>
+            <Setter Property="Background"         Value="{StaticResource BrBgSurface}"/>
             <Setter Property="BorderBrush"        Value="{StaticResource BrBorderSubtle}"/>
             <Setter Property="BorderThickness"    Value="1"/>
             <Setter Property="CornerRadius"       Value="{StaticResource RadiusMedium}"/>
@@ -177,15 +191,42 @@
             <Setter Property="FontFamily"         Value="{StaticResource FontPrimary}"/>
             <Setter Property="FontSize"           Value="{StaticResource FontSizeBody}"/>
             <Setter Property="Foreground"         Value="{StaticResource BrTextPrimary}"/>
-            <Setter Property="Background"         Value="{StaticResource BrBgElevated}"/>
-            <Setter Property="BorderBrush"        Value="{StaticResource BrBorderSubtle}"/>
+            <Setter Property="CornerRadius"       Value="{StaticResource RadiusMedium}"/>
             <Setter Property="Padding"            Value="12,8"/>
+            <Setter Property="MinHeight"          Value="40"/>
+            <Setter Property="MaxDropDownHeight"  Value="300"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style Selector="ComboBoxItem">
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
 
         <Style Selector="CheckBox">
             <Setter Property="FontFamily"         Value="{StaticResource FontPrimary}"/>
             <Setter Property="FontSize"           Value="{StaticResource FontSizeBody}"/>
             <Setter Property="Foreground"         Value="{StaticResource BrTextPrimary}"/>
+            <Setter Property="CornerRadius"       Value="{StaticResource RadiusSmall}"/>
+        </Style>
+
+        <Style Selector="ListBox">
+            <Setter Property="Background"         Value="Transparent"/>
+            <Setter Property="BorderThickness"    Value="0"/>
+            <Setter Property="CornerRadius"       Value="{StaticResource RadiusMedium}"/>
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding"            Value="12,8"/>
+            <Setter Property="CornerRadius"       Value="{StaticResource RadiusSmall}"/>
+            <Setter Property="Margin"             Value="0,2"/>
         </Style>
 
         <!-- ════════════════════════════════════════════════════════

@@ -61,6 +61,9 @@
     <x:String x:Key="TxtDeletedSuccessFormat">OptiScaler v{0} eliminado exitosamente.</x:String>
     <x:String x:Key="TxtFailedDeleteFormat">Error al eliminar la versión: {0}</x:String>
     <x:String x:Key="TxtError">Error</x:String>
+    <x:String x:Key="TxtCurrentSelection">Seleccionado actualmente</x:String>
+    <x:String x:Key="TxtVersionStored">1 versión almacenada localmente.</x:String>
+    <x:String x:Key="TxtVersionsStored">{0} versiones almacenadas localmente.</x:String>
 
     <!-- ComponentInfoWindow -->
     <x:String x:Key="TxtComponentTitle">Versiones de Componentes</x:String>
@@ -134,6 +137,8 @@
     <x:String x:Key="TxtNoGpuTip">No se detectó GPU en este sistema</x:String>
     <x:String x:Key="TxtGpuFail">⚠️ Error al detectar GPU</x:String>
     <x:String x:Key="TxtGpuFailTipFormat">Error al detectar GPU: {0}</x:String>
+    <x:String x:Key="TxtAutoScan">Escaneo Automático al Iniciar</x:String>
+    <x:String x:Key="TxtAutoScanDesc">Escanea automáticamente en busca de juegos si la lista está vacía al iniciar.</x:String>
 
     <!-- Help View Strings -->
     <x:String x:Key="TxtAboutTitle">Acerca de</x:String>
@@ -142,5 +147,15 @@
     <x:String x:Key="TxtBuildDateLbl">Fecha de compilación</x:String>
     <x:String x:Key="TxtCheckUpdatesBtn">Buscar actualizaciones</x:String>
     <x:String x:Key="TxtGithubBtn">Repositorio de GitHub</x:String>
+
+    <!-- App Update -->
+    <x:String x:Key="TxtUpdateAvailableTitle">Actualización disponible</x:String>
+    <x:String x:Key="TxtUpdateAvailableMsg">Una nueva versión de Optiscaler Client está disponible (v{0}).&#x0a;¿Deseas descargarla e instalarla ahora?</x:String>
+    <x:String x:Key="TxtUpdatingApp">Actualizando aplicación...</x:String>
+    <x:String x:Key="TxtUpdateReady">Actualización lista</x:String>
+    <x:String x:Key="TxtUpdateReadyMsg">La actualización ha sido descargada. La aplicación se reiniciará ahora para completar la instalación.</x:String>
+    <x:String x:Key="TxtUpdateError">Error de actualización</x:String>
+    <x:String x:Key="TxtNoUpdateFound">La aplicación ya está actualizada.</x:String>
+    <x:String x:Key="TxtUpdateCheckError">Hubo un problema al buscar actualizaciones. Por favor, inténtalo de nuevo más tarde.</x:String>
 
 </ResourceDictionary>

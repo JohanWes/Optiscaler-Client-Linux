@@ -39,11 +39,11 @@
                                 BorderThickness="0,0,0,1">
                             <Grid ColumnDefinitions="*, Auto">
                                 <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Cache Management"
+                                    <TextBlock Text="{DynamicResource TxtManageCacheTitle}"
                                                FontSize="18"
                                                FontWeight="Bold"
                                                Foreground="{StaticResource BrTextPrimary}"/>
-                                    <TextBlock Text="OptiScaler versions stored locally"
+                                    <TextBlock Text="{DynamicResource TxtManageCacheDesc}"
                                                FontSize="11"
                                                Foreground="{StaticResource BrTextSecondary}"
                                                Margin="0,2,0,0"/>
@@ -82,7 +82,7 @@
                                            FontSize="11"
                                            Foreground="{StaticResource BrTextSecondary}"/>
                                 <Button Grid.Column="1"
-                                        Content="Close"
+                                        Content="{DynamicResource TxtClose}"
                                         Classes="BtnPrimary"
                                         Padding="20,8"
                                         Click="BtnClose_Click"/>
