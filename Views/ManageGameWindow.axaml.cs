@@ -137,6 +137,7 @@ namespace OptiscalerClient.Views
                 var allVersions = componentService.OptiScalerAvailableVersions;
                 var betaVersions = componentService.BetaVersions;
                 var latestBeta = componentService.LatestBetaVersion;
+                var showBetaVersions = componentService.Config.ShowBetaVersions;
 
                 var cmbOptiVersion = this.FindControl<ComboBox>("CmbOptiVersion");
                 if (cmbOptiVersion == null) return;
@@ -166,16 +167,25 @@ namespace OptiscalerClient.Views
                     currentIndex++;
                 }
 
-                // 2. Stable versions — default selection is first non-nightly stable
+                // 2. Stable versions — default selection based on user preference
                 bool isLatestStableMarked = false;
                 foreach (var ver in stableVersions)
                 {
                     bool isFirstStable = !isLatestStableMarked && !ver.Contains("nightly", StringComparison.OrdinalIgnoreCase);
-                    if (isFirstStable)
+                    
+                    // Select default version based on user preference
+                    if (showBetaVersions && !string.IsNullOrEmpty(latestBeta))
                     {
+                        // User prefers latest beta - select the latest beta (index 0)
+                        selectedIndex = 0;
+                    }
+                    else if (isFirstStable)
+                    {
+                        // User prefers stable - select the first stable version
                         selectedIndex = currentIndex;
                         isLatestStableMarked = true;
                     }
+                    
                     cmbOptiVersion.Items.Add(BuildVersionItem(ver, isBeta: false, isLatest: isFirstStable));
                     currentIndex++;
                 }

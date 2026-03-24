@@ -39,7 +39,7 @@ namespace OptiscalerClient.Models
         public bool Debug { get; set; } = false;
         public bool AutoScan { get; set; } = true;
         public bool AnimationsEnabled { get; set; } = true;
-        public bool ShowBetaVersions { get; set; } = true;
+        public bool ShowBetaVersions { get; set; } = false;
         public ScanSourcesConfig ScanSources { get; set; } = new();
     }
 

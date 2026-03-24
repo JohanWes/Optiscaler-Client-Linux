@@ -150,10 +150,9 @@ namespace OptiscalerClient.Services
                 if (_cachedOptiScalerVersions == null || (DateTime.Now - _lastApiCheckTime).TotalMinutes > 15)
                 {
                     DebugWindow.Log($"[ComponentCheck] Fetching updates from GitHub API (Rates: {(DateTime.Now - _lastApiCheckTime).ToString(@"hh\:mm\:ss")} since last check)");
+                    // Always fetch both stable and beta versions
                     var optiVersionsTask = FetchAllComponentVersionsAsync(_config.OptiScaler);
-                    var optiBetasTask = _config.ShowBetaVersions
-                        ? FetchAllComponentVersionsAsync(_config.OptiScalerBetas)
-                        : Task.FromResult(new System.Collections.Generic.List<string>());
+                    var optiBetasTask = FetchAllComponentVersionsAsync(_config.OptiScalerBetas);
                     var fakeTask = CheckComponentUpdateAsync("Fakenvapi", _config.Fakenvapi);
                     var nukemTask = CheckComponentUpdateAsync("NukemFG", _config.NukemFG);
 
@@ -181,7 +180,17 @@ namespace OptiscalerClient.Services
                     _lastApiCheckTime = DateTime.Now;
                 }
 
-                _remoteVersions.OptiScalerVersion = OptiScalerAvailableVersions.FirstOrDefault(v => !v.Contains("nightly", StringComparison.OrdinalIgnoreCase)) ?? OptiScalerAvailableVersions.FirstOrDefault();
+                // Select default version based on user preference
+                if (_config.ShowBetaVersions && _cachedLatestBetaVersion != null)
+                {
+                    // User prefers latest beta as default
+                    _remoteVersions.OptiScalerVersion = _cachedLatestBetaVersion;
+                }
+                else
+                {
+                    // Default to latest stable LTSC version
+                    _remoteVersions.OptiScalerVersion = OptiScalerAvailableVersions.FirstOrDefault(v => !v.Contains("nightly", StringComparison.OrdinalIgnoreCase)) ?? OptiScalerAvailableVersions.FirstOrDefault();
+                }
                 _remoteVersions.FakenvapiVersion = _cachedFakenvapiVersion;
                 _remoteVersions.NukemFGVersion = _cachedNukemFGVersion;
 
