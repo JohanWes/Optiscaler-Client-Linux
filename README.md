@@ -4,6 +4,8 @@
 [![License: GPL](https://img.shields.io/badge/License-GPL-yellow.svg?style=flat-square)](LICENSE)
 [![Platform: Windows](https://img.shields.io/badge/Platform-Windows-0078D4?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 
+> **⚠️ Disclaimer:** This is **not** an official OptiScaler project. I am not affiliated with the OptiScaler team. This is a personal project developed without any commercial purpose. Anyone is free to try and use this software at their own risk.
+
 **OptiScaler Client** is a modern, high-performance desktop utility designed to simplify the installation, management, and update of the **OptiScaler** mod across your entire game library. Built with **C#** and **WPF**.
 
 ---
@@ -26,12 +28,12 @@
 
 ## 🚀 Key Features
 
-*   **🔍 Auto-Scanner**: Deeply scans Steam, Epic Games, GOG, EA, Ubisoft, Battle.net, and Xbox libraries to find your games instantly.
-*   **✦ One-Click Install**: Automatically downloads and configures the latest OptiScaler versions for specific titles.
-*   **🛠️ Component Control**: Manage additional tools like **Fakenvapi** (for AMD/Intel GPUs) and **Nukem's DLSSG-to-FSR3** mod.
-*   **📦 Cache Management**: Keep your storage clean by managing different downloaded mod versions.
-*   **🌐 Localization**: Full support for Multiple languages (English, Spanish & Brazilian Portuguese).
-*   **⚡ Native Performance**: Fully self-contained, single-file executable for a zero-footprint installation.
+*   **Auto-Scanner**: Deeply scans Steam, Epic Games, GOG, EA, Ubisoft, Battle.net, and Xbox libraries to find your games instantly.
+*   **One-Click Install**: Automatically downloads and configures the latest OptiScaler versions for specific titles.
+*   **Component Control**: Manage additional tools like **Fakenvapi** (for AMD/Intel GPUs) and **Nukem's DLSSG-to-FSR3** mod.
+*   **Cache Management**: Keep your storage clean by managing different downloaded mod versions.
+*   **Localization**: Full support for Multiple languages (English, Spanish & Brazilian Portuguese).
+*   **Native Performance**: Fully self-contained, single-file executable for a zero-footprint installation.
 
 ---
 
@@ -69,9 +71,12 @@ We welcome contributions! If you'd like to improve OptiScaler Client:
 ## 📄 License & Acknowledgments
 
 *   Distributed under the **GPL-3.0 License**. See `LICENSE` for more information.
-*   **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: The core upscaling technology.
-*   **[fakenvapi](https://github.com/optiscaler/fakenvapi)**: Essential compatibility layer.
-*   **[NukemFG](https://github.com/Nukem9/dlssg-to-fsr3)**: Frame Generation bridge.
+*   **Special thanks and deep respect to the OptiScaler development team** for creating and maintaining this incredible software that enhances gaming experiences for countless users worldwide.
+*   **[OptiScaler](https://github.com/optiscaler/OptiScaler)**: The core technology that makes this possible.
+*   **[fakenvapi](https://github.com/optiscaler/fakenvapi)**: Essential compatibility layer developed by the OptiScaler team.
+*   **[NukemFG](https://github.com/Nukem9/dlssg-to-fsr3)**: Frame Generation bridge by Nukem.
+
+This client application is merely a frontend interface to help users more easily manage and install the amazing work done by the OptiScaler team.
 
 ---
 
