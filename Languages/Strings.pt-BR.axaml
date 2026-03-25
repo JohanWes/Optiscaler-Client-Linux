@@ -151,6 +151,7 @@
     <x:String x:Key="TxtAnimationsDesc">Ativar transições suaves e animações em toda a interface</x:String>
     <x:String x:Key="TxtBetaVersions">Preferir último beta como padrão</x:String>
     <x:String x:Key="TxtBetaVersionsDesc">Quando ativado, seleciona automaticamente a última versão beta em vez da versão estável.</x:String>
+    <x:String x:Key="TxtBetaIncludesComponents">Versões beta já incluem Fakenvapi e NukemFG</x:String>
 
     <!-- Scan Sources -->
     <x:String x:Key="TxtManageScanSources">Gerenciar fontes de verificação</x:String>

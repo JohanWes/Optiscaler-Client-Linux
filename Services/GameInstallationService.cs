@@ -4,6 +4,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Text.Json;
 using OptiscalerClient.Models;
+using OptiscalerClient.Views;
 
 namespace OptiscalerClient.Services
 {
@@ -23,6 +24,10 @@ namespace OptiscalerClient.Services
                                      string? optiscalerVersion = null,
                                      string? overrideGameDir = null)
         {
+            DebugWindow.Log($"[Install] Starting OptiScaler installation for game: {game.Name}");
+            DebugWindow.Log($"[Install] Version: {optiscalerVersion}, Injection: {injectionDllName}");
+            DebugWindow.Log($"[Install] Cache path: {cachePath}");
+            
             if (!Directory.Exists(cachePath))
                 throw new DirectoryNotFoundException("Updates cache directory not found. Please download OptiScaler first.");
 
@@ -31,11 +36,14 @@ namespace OptiscalerClient.Services
             if (cacheFiles.Length == 0)
                 throw new Exception("Cache directory is empty. Download update again.");
 
+            DebugWindow.Log($"[Install] Cache contains {cacheFiles.Length} files");
+
             // Determine game directory intelligently (rules for base exe, Phoenix override, or user modal)
             string? gameDir;
             if (overrideGameDir != null)
             {
                 gameDir = overrideGameDir;
+                DebugWindow.Log($"[Install] Using override game directory: {gameDir}");
             }
             else
             {
@@ -44,16 +52,21 @@ namespace OptiscalerClient.Services
                 {
                     throw new Exception("Could not automatically detect the game directory. Please use Manual Install.");
                 }
+                DebugWindow.Log($"[Install] Detected game directory: {gameDir}");
             }
 
             if (string.IsNullOrEmpty(gameDir) || !Directory.Exists(gameDir))
                 throw new Exception("Installation cancelled or valid directory not found.");
 
             var backupDir = Path.Combine(gameDir, BackupFolderName);
+            DebugWindow.Log($"[Install] Backup directory: {backupDir}");
 
             // Create backup folder
             if (!Directory.Exists(backupDir))
+            {
                 Directory.CreateDirectory(backupDir);
+                DebugWindow.Log($"[Install] Created backup directory");
+            }
 
             // Create installation manifest — OptiscalerVersion is the authoritative source for the UI
             var manifest = new InstallationManifest
@@ -75,6 +88,7 @@ namespace OptiscalerClient.Services
                     fileName.Equals("nvngx.dll", StringComparison.OrdinalIgnoreCase))
                 {
                     optiscalerMainDll = file;
+                    DebugWindow.Log($"[Install] Found main OptiScaler DLL: {fileName}");
                     break;
                 }
             }
@@ -84,6 +98,7 @@ namespace OptiscalerClient.Services
 
             // Step 1: Install the main OptiScaler DLL with the selected injection method name
             var injectionDllPath = Path.Combine(gameDir, injectionDllName);
+            DebugWindow.Log($"[Install] Installing main DLL as: {injectionDllName}");
 
             // Backup existing file if it exists
             if (File.Exists(injectionDllPath))
@@ -97,14 +112,19 @@ namespace OptiscalerClient.Services
                 {
                     File.Copy(injectionDllPath, backupPath);
                     manifest.BackedUpFiles.Add(injectionDllName);
+                    DebugWindow.Log($"[Install] Backed up existing file: {injectionDllName}");
                 }
             }
 
             // Copy OptiScaler.dll as the injection DLL
             File.Copy(optiscalerMainDll, injectionDllPath, true);
             manifest.InstalledFiles.Add(injectionDllName);
+            DebugWindow.Log($"[Install] Installed main OptiScaler DLL");
 
             // Step 2: Copy all other files (configs, dependencies, etc.)
+            DebugWindow.Log($"[Install] Copying additional files...");
+            var additionalFileCount = 0;
+            
             foreach (var sourcePath in cacheFiles)
             {
                 var fileName = Path.GetFileName(sourcePath);
@@ -124,6 +144,7 @@ namespace OptiscalerClient.Services
                 if (destDir != null && !Directory.Exists(destDir))
                 {
                     Directory.CreateDirectory(destDir);
+                    DebugWindow.Log($"[Install] Created directory: {Path.GetRelativePath(gameDir, destDir)}");
 
                     // Add to manifest (relative to game directory)
                     var relativeDir = Path.GetRelativePath(gameDir, destDir);
@@ -145,17 +166,23 @@ namespace OptiscalerClient.Services
                     {
                         File.Copy(destPath, backupPath);
                         manifest.BackedUpFiles.Add(relativePath);
+                        DebugWindow.Log($"[Install] Backed up existing file: {relativePath}");
                     }
                 }
 
                 File.Copy(sourcePath, destPath, true);
                 manifest.InstalledFiles.Add(relativePath);
+                additionalFileCount++;
             }
+
+            DebugWindow.Log($"[Install] Copied {additionalFileCount} additional files");
 
             // Step 3: Install Fakenvapi if requested (AMD/Intel only)
             if (installFakenvapi && !string.IsNullOrEmpty(fakenvapiCachePath) && Directory.Exists(fakenvapiCachePath))
             {
+                DebugWindow.Log($"[Install] Installing Fakenvapi...");
                 var fakeFiles = Directory.GetFiles(fakenvapiCachePath, "*.*", SearchOption.AllDirectories);
+                var fakeFileCount = 0;
 
                 foreach (var sourcePath in fakeFiles)
                 {
@@ -175,19 +202,26 @@ namespace OptiscalerClient.Services
                             {
                                 File.Copy(destPath, backupPath);
                                 manifest.BackedUpFiles.Add(fileName);
+                                DebugWindow.Log($"[Install] Backed up existing Fakenvapi file: {fileName}");
                             }
                         }
 
                         File.Copy(sourcePath, destPath, true);
                         manifest.InstalledFiles.Add(fileName);
+                        fakeFileCount++;
+                        DebugWindow.Log($"[Install] Installed Fakenvapi file: {fileName}");
                     }
                 }
+                
+                DebugWindow.Log($"[Install] Installed {fakeFileCount} Fakenvapi files");
             }
 
             // Step 4: Install NukemFG if requested
             if (installNukemFG && !string.IsNullOrEmpty(nukemFGCachePath) && Directory.Exists(nukemFGCachePath))
             {
+                DebugWindow.Log($"[Install] Installing NukemFG...");
                 var nukemFiles = Directory.GetFiles(nukemFGCachePath, "*.*", SearchOption.AllDirectories);
+                var nukemFileCount = 0;
 
                 foreach (var sourcePath in nukemFiles)
                 {
@@ -207,22 +241,29 @@ namespace OptiscalerClient.Services
                             {
                                 File.Copy(destPath, backupPath);
                                 manifest.BackedUpFiles.Add(fileName);
+                                DebugWindow.Log($"[Install] Backed up existing NukemFG file: {fileName}");
                             }
                         }
 
                         File.Copy(sourcePath, destPath, true);
                         manifest.InstalledFiles.Add(fileName);
+                        nukemFileCount++;
+                        DebugWindow.Log($"[Install] Installed NukemFG file: {fileName}");
 
                         // Modify OptiScaler.ini to set FGType=nukems
                         ModifyOptiScalerIni(gameDir, "FGType", "nukems");
+                        DebugWindow.Log($"[Install] Modified OptiScaler.ini for NukemFG");
                     }
                 }
+                
+                DebugWindow.Log($"[Install] Installed {nukemFileCount} NukemFG files");
             }
 
             // Save manifest
             var manifestPath = Path.Combine(backupDir, ManifestFileName);
             var manifestJson = JsonSerializer.Serialize(manifest, OptimizerContext.Default.InstallationManifest);
             File.WriteAllText(manifestPath, manifestJson);
+            DebugWindow.Log($"[Install] Saved installation manifest");
 
             // Immediately update the game object so the UI reflects the correct state
             // without waiting for the next full scan/analysis cycle.
@@ -232,8 +273,13 @@ namespace OptiscalerClient.Services
 
             // Post-Install: Re-analyze to refresh DLSS/FSR/XeSS fields.
             // AnalyzeGame will also confirm OptiscalerVersion via the manifest.
+            DebugWindow.Log($"[Install] Re-analyzing game to update component information...");
             var analyzer = new GameAnalyzerService();
             analyzer.AnalyzeGame(game);
+            
+            DebugWindow.Log($"[Install] OptiScaler installation completed successfully for {game.Name}");
+            DebugWindow.Log($"[Install] Total files installed: {manifest.InstalledFiles.Count}");
+            DebugWindow.Log($"[Install] Total files backed up: {manifest.BackedUpFiles.Count}");
         }
 
         public void UninstallOptiScaler(Game game)

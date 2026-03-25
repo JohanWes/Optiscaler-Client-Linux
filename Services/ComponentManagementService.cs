@@ -347,23 +347,32 @@ namespace OptiscalerClient.Services
 
             var extractPath = GetOptiScalerCachePath(version);
             if (Directory.Exists(extractPath) && Directory.GetFiles(extractPath).Length > 0)
+            {
+                DebugWindow.Log($"[Download] OptiScaler v{version} already cached at {extractPath}");
                 return extractPath; // Already downloaded
+            }
 
             LastError = null;
+            DebugWindow.Log($"[Download] Starting download of OptiScaler v{version}");
+            DebugWindow.Log($"[Download] Cache path: {extractPath}");
+            
             try
             {
                 // Try to retrieve release from stable repo first, then beta repo
                 HttpResponseMessage? response = null;
                 string? json = null;
+                string repoSource = "";
                 
                 // Try stable repo with v prefix
                 var url = $"https://api.github.com/repos/{_config.OptiScaler.RepoOwner}/{_config.OptiScaler.RepoName}/releases/tags/v{version}";
+                DebugWindow.Log($"[Download] Trying stable repo (with v prefix): {url}");
                 response = await _httpClient.GetAsync(url);
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     // Try stable repo without v prefix
                     url = $"https://api.github.com/repos/{_config.OptiScaler.RepoOwner}/{_config.OptiScaler.RepoName}/releases/tags/{version}";
+                    DebugWindow.Log($"[Download] Trying stable repo (without v prefix): {url}");
                     response = await _httpClient.GetAsync(url);
                 }
                 
@@ -371,17 +380,22 @@ namespace OptiscalerClient.Services
                 {
                     // Try beta repo with v prefix
                     url = $"https://api.github.com/repos/{_config.OptiScalerBetas.RepoOwner}/{_config.OptiScalerBetas.RepoName}/releases/tags/v{version}";
+                    DebugWindow.Log($"[Download] Trying beta repo (with v prefix): {url}");
                     response = await _httpClient.GetAsync(url);
+                    repoSource = " (beta repo)";
                 }
                 
                 if (!response.IsSuccessStatusCode)
                 {
                     // Try beta repo without v prefix
                     url = $"https://api.github.com/repos/{_config.OptiScalerBetas.RepoOwner}/{_config.OptiScalerBetas.RepoName}/releases/tags/{version}";
+                    DebugWindow.Log($"[Download] Trying beta repo (without v prefix): {url}");
                     response = await _httpClient.GetAsync(url);
+                    repoSource = " (beta repo)";
                 }
                 
                 response.EnsureSuccessStatusCode();
+                DebugWindow.Log($"[Download] Release found{repoSource} for OptiScaler v{version}");
 
                 json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
@@ -397,6 +411,7 @@ namespace OptiscalerClient.Services
                             if (assetUrl != null && (assetUrl.EndsWith(".zip") || assetUrl.EndsWith(".7z")))
                             {
                                 downloadUrl = assetUrl;
+                                DebugWindow.Log($"[Download] Found download asset: {Path.GetFileName(assetUrl)}");
                                 break;
                             }
                         }
@@ -408,21 +423,25 @@ namespace OptiscalerClient.Services
 
                 // Create folder
                 Directory.CreateDirectory(extractPath);
+                DebugWindow.Log($"[Download] Created cache directory: {extractPath}");
 
                 // Download with optional progress simulation or reading stream. 
                 // We'll read the stream for progress:
+                DebugWindow.Log($"[Download] Starting file download from: {Path.GetFileName(downloadUrl)}");
                 using var dlResponse = await _httpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead);
                 dlResponse.EnsureSuccessStatusCode();
 
                 var totalBytes = dlResponse.Content.Headers.ContentLength ?? 10 * 1024 * 1024; // fallback 10MB
                 var tempZip = Path.Combine(Path.GetTempPath(), $"OptiScaler_{version}_{Guid.NewGuid()}.zip");
+                DebugWindow.Log($"[Download] Download size: {totalBytes:N0} bytes, temp file: {Path.GetFileName(tempZip)}");
 
-                using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None))
+                long totalRead = 0;
+                using (var fs = new FileStream(tempZip, FileMode.Create, FileAccess.Write, FileShare.None, 65536)) // 64KB buffer
                 using (var cs = await dlResponse.Content.ReadAsStreamAsync())
                 {
-                    var buffer = new byte[8192];
+                    var buffer = new byte[65536]; // 64KB buffer for faster download
                     var isMoreToRead = true;
-                    long totalRead = 0;
+                    var lastProgressLog = DateTime.MinValue;
 
                     do
                     {
@@ -435,40 +454,73 @@ namespace OptiscalerClient.Services
                         {
                             await fs.WriteAsync(buffer, 0, read);
                             totalRead += read;
-                            progress?.Report((double)totalRead / totalBytes * 100);
+                            var progressPercent = (double)totalRead / totalBytes * 100;
+                            progress?.Report(progressPercent);
+                            
+                            // Log progress every 10 seconds
+                            if (DateTime.Now - lastProgressLog > TimeSpan.FromSeconds(10))
+                            {
+                                DebugWindow.Log($"[Download] Progress: {progressPercent:F1}% ({totalRead:N0}/{totalBytes:N0} bytes)");
+                                lastProgressLog = DateTime.Now;
+                            }
                         }
                     }
                     while (isMoreToRead);
                 }
 
+                DebugWindow.Log($"[Download] Download completed: {totalRead:N0} bytes downloaded");
+
                 // Ensure 100% is reached
                 progress?.Report(100);
 
                 // Extract
+                DebugWindow.Log($"[Extract] Starting extraction of {Path.GetFileName(tempZip)} to {extractPath}");
+                var extractStartTime = DateTime.Now;
+                var fileCount = 0;
+                
                 using (var archive = ArchiveFactory.Open(tempZip))
                 {
-                    foreach (var entry in archive.Entries.Where(e => !e.IsDirectory))
+                    var entries = archive.Entries.Where(e => !e.IsDirectory).ToList();
+                    
+                    foreach (var entry in entries)
                     {
-                        entry.WriteToDirectory(extractPath, new ExtractionOptions
+                        var destPath = Path.Combine(extractPath, entry.Key);
+                        var destDir = Path.GetDirectoryName(destPath);
+                        
+                        if (destDir != null && !Directory.Exists(destDir))
+                            Directory.CreateDirectory(destDir);
+                        
+                        using (var entryStream = entry.OpenEntryStream())
+                        using (var fileStream = File.Create(destPath))
                         {
-                            ExtractFullPath = true,
-                            Overwrite = true
-                        });
+                            entryStream.CopyTo(fileStream, 81920); // 80KB buffer for faster extraction
+                        }
+                        
+                        fileCount++;
                     }
                 }
+                
+                var extractDuration = DateTime.Now - extractStartTime;
+                DebugWindow.Log($"[Extract] Extraction completed: {fileCount} files extracted in {extractDuration.TotalSeconds:F1} seconds");
 
                 File.Delete(tempZip);
+                DebugWindow.Log($"[Download] Temporary file deleted: {Path.GetFileName(tempZip)}");
 
                 _localVersions.OptiScalerVersion = version; // update the locally assumed latest for other components
                 SaveLocalVersions();
+                DebugWindow.Log($"[Download] OptiScaler v{version} download and extraction completed successfully");
 
                 return extractPath;
             }
             catch (Exception ex)
             {
                 LastError = ex;
+                DebugWindow.Log($"[Download] ERROR: {ex.Message}");
                 if (Directory.Exists(extractPath))
+                {
                     Directory.Delete(extractPath, true);
+                    DebugWindow.Log($"[Download] Cleaned up cache directory due to error: {extractPath}");
+                }
                 throw;
             }
         }

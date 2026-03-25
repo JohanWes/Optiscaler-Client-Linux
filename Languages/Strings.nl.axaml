@@ -151,8 +151,9 @@
     <x:String x:Key="TxtAutoScanDesc">Scan automatisch voor games als de lijst leeg is bij opstarten.</x:String>
     <x:String x:Key="TxtAnimations">Activeer animaties</x:String>
     <x:String x:Key="TxtAnimationsDesc">Activeer soepele overgangen en animaties in de hele interface</x:String>
-    <x:String x:Key="TxtBetaVersions">Beta-versies weergeven</x:String>
-    <x:String x:Key="TxtBetaVersionsDesc">Beta-versies van OptiScaler opnemen in de selector. Betas kunnen instabiel zijn.</x:String>
+    <x:String x:Key="TxtBetaVersions">Voorkeur voor laatste beta als standaard</x:String>
+    <x:String x:Key="TxtBetaVersionsDesc">Wanneer ingeschakeld, selecteert automatisch de laatste beta versie in plaats van de stabiele release.</x:String>
+    <x:String x:Key="TxtBetaIncludesComponents">Beta versies bevatten al Fakenvapi en NukemFG</x:String>
 
     <!-- Scan Sources -->
     <x:String x:Key="TxtManageScanSources">Scanbronnen beheren</x:String>

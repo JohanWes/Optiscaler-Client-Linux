@@ -204,9 +204,65 @@ namespace OptiscalerClient.Views
 
                 cmbOptiVersion.SelectedIndex = selectedIndex;
 
+                // Update checkbox states based on initial selection
+                UpdateCheckboxStatesForVersion(cmbOptiVersion);
+
                 // Wire SelectionChanged here so it only fires on user interaction, not during init
                 cmbOptiVersion.SelectionChanged += CmbOptiVersion_SelectionChanged;
             });
+        }
+
+        private void UpdateCheckboxStatesForVersion(ComboBox? cmb)
+        {
+            if (cmb == null) return;
+
+            var selectedTag = (cmb?.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+            bool isBeta = !string.IsNullOrEmpty(selectedTag) && _betaVersions.Contains(selectedTag);
+
+            var chkFakenvapi = this.FindControl<CheckBox>("ChkInstallFakenvapi");
+            var chkNukemFG = this.FindControl<CheckBox>("ChkInstallNukemFG");
+            var betaInfoPanel = this.FindControl<Border>("BetaInfoPanel");
+
+            if (isBeta)
+            {
+                // Show info panel
+                if (betaInfoPanel != null)
+                {
+                    betaInfoPanel.IsVisible = true;
+                }
+                
+                if (chkFakenvapi != null)
+                {
+                    chkFakenvapi.IsEnabled = false;
+                    chkFakenvapi.IsChecked = false;
+                    ToolTip.SetTip(chkFakenvapi, "Included in beta version");
+                }
+                if (chkNukemFG != null)
+                {
+                    chkNukemFG.IsEnabled = false;
+                    chkNukemFG.IsChecked = false;
+                    ToolTip.SetTip(chkNukemFG, "Included in beta version");
+                }
+            }
+            else
+            {
+                // Hide info panel
+                if (betaInfoPanel != null)
+                {
+                    betaInfoPanel.IsVisible = false;
+                }
+                
+                if (chkFakenvapi != null)
+                {
+                    chkFakenvapi.IsEnabled = true;
+                    ToolTip.SetTip(chkFakenvapi, null);
+                }
+                if (chkNukemFG != null)
+                {
+                    chkNukemFG.IsEnabled = true;
+                    ToolTip.SetTip(chkNukemFG, null);
+                }
+            }
         }
 
         private void SetupUI()
@@ -660,28 +716,13 @@ namespace OptiscalerClient.Views
         private void CmbOptiVersion_SelectionChanged(object? sender, SelectionChangedEventArgs e)
         {
             var cmb = sender as ComboBox;
+            UpdateCheckboxStatesForVersion(cmb);
+            
+            // Only configure additional components if not a beta version
             var selectedTag = (cmb?.SelectedItem as ComboBoxItem)?.Tag?.ToString();
             bool isBeta = !string.IsNullOrEmpty(selectedTag) && _betaVersions.Contains(selectedTag);
-
-            var chkFakenvapi = this.FindControl<CheckBox>("ChkInstallFakenvapi");
-            var chkNukemFG = this.FindControl<CheckBox>("ChkInstallNukemFG");
-
-            if (isBeta)
-            {
-                if (chkFakenvapi != null)
-                {
-                    chkFakenvapi.IsEnabled = false;
-                    chkFakenvapi.IsChecked = false;
-                    ToolTip.SetTip(chkFakenvapi, "Included in beta version");
-                }
-                if (chkNukemFG != null)
-                {
-                    chkNukemFG.IsEnabled = false;
-                    chkNukemFG.IsChecked = false;
-                    ToolTip.SetTip(chkNukemFG, "Included in beta version");
-                }
-            }
-            else
+            
+            if (!isBeta)
             {
                 ConfigureAdditionalComponents();
             }
