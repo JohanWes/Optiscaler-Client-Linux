@@ -284,24 +284,15 @@
                             </Border>
                         </StackPanel>
 
-                        <!-- Row 1, Col 2: NukemFG (left) + Uninstall button (right) -->
-                        <Grid Grid.Row="1" Grid.Column="2" ColumnDefinitions="*,Auto" Margin="0,0,0,10" VerticalAlignment="Center">
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                <CheckBox Name="ChkInstallNukemFG"
-                                          Content="NukemFG"
-                                          VerticalAlignment="Center"/>
-                                <Border Background="{StaticResource BrBgElevated}" BorderBrush="{StaticResource BrBorderSubtle}" BorderThickness="1" CornerRadius="8" Width="16" Height="16" Margin="6,0,0,0" ToolTip.ShowDelay="100" Cursor="Help" ToolTip.Tip="{DynamicResource TxtNukemHelpTip}">
-                                    <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
-                                </Border>
-                            </StackPanel>
-                            <Button Grid.Column="1"
-                                    Name="BtnUninstall"
-                                    Content="{DynamicResource TxtUninstall}"
-                                    Classes="BtnDanger"
-                                    Padding="18,8"
-                                    IsVisible="False"
-                                    Click="BtnUninstall_Click"/>
-                        </Grid>
+                        <!-- Row 1, Col 2: Fakenvapi only -->
+                        <StackPanel Grid.Row="1" Grid.Column="2" Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                            <CheckBox Name="ChkInstallFakenvapi"
+                                      Content="Fakenvapi"
+                                      VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource BrBgElevated}" BorderBrush="{StaticResource BrBorderSubtle}" BorderThickness="1" CornerRadius="8" Width="16" Height="16" Margin="6,0,0,0" ToolTip.ShowDelay="100" Cursor="Help" ToolTip.Tip="{DynamicResource TxtFakenvapiHelpTip}">
+                                <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                            </Border>
+                        </StackPanel>
 
                         <!-- Vertical divider spanning rows 1, 2 and 3 -->
                         <Border Grid.Row="1" Grid.RowSpan="3" Grid.Column="1"
@@ -343,61 +334,70 @@
                             </Border>
                         </StackPanel>
 
-                        <!-- Row 2, Col 2: Fakenvapi (left) + install buttons (right) -->
+                        <!-- Row 2, Col 2: NukemFG (left) + Uninstall button (right) -->
                         <Grid Grid.Row="2" Grid.Column="2" ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                <CheckBox Name="ChkInstallFakenvapi"
-                                          Content="Fakenvapi"
+                                <CheckBox Name="ChkInstallNukemFG"
+                                          Content="NukemFG"
                                           VerticalAlignment="Center"/>
-                                <Border Background="{StaticResource BrBgElevated}" BorderBrush="{StaticResource BrBorderSubtle}" BorderThickness="1" CornerRadius="8" Width="16" Height="16" Margin="6,0,0,0" ToolTip.ShowDelay="100" Cursor="Help" ToolTip.Tip="{DynamicResource TxtFakenvapiHelpTip}">
+                                <Border Background="{StaticResource BrBgElevated}" BorderBrush="{StaticResource BrBorderSubtle}" BorderThickness="1" CornerRadius="8" Width="16" Height="16" Margin="6,0,0,0" ToolTip.ShowDelay="100" Cursor="Help" ToolTip.Tip="{DynamicResource TxtNukemHelpTip}">
                                     <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
                                 </Border>
                             </StackPanel>
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Name="InstallBtnGroup">
-                                <Button Name="BtnInstallManual"
-                                        Content="{DynamicResource TxtBtnManualInstall}"
-                                        Classes="BtnSuccess"
-                                        Padding="18,8"
-                                        Margin="0,0,10,0"
-                                        Click="BtnInstallManual_Click"/>
-                                <Button Name="BtnInstall"
-                                        Content="{DynamicResource TxtInstallOpti}"
-                                        Classes="BtnSuccess"
-                                        Padding="18,8"
-                                        Click="BtnInstall_Click"/>
-                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Name="BtnUninstall"
+                                    Content="{DynamicResource TxtUninstall}"
+                                    Classes="BtnDanger"
+                                    Padding="18,8"
+                                    IsVisible="False"
+                                    Click="BtnUninstall_Click"/>
                         </Grid>
 
-                        <!-- Row 3, Col 0: FSR4 INT8 version selector (spans all cols) -->
-                        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
-                                Padding="0,8,0,0"
-                                Margin="0,4,0,0">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="FSR4 INT8:"
-                                           Foreground="{StaticResource BrTextSecondary}"
-                                           VerticalAlignment="Center"
-                                           FontSize="{StaticResource FontSizeBody}"
-                                           Margin="0,0,8,0"/>
-                                <ComboBox Name="CmbExtrasVersion"
-                                          Width="170"
-                                          Classes="BtnSelector"
-                                          Padding="8,0,24,0"
-                                          HorizontalContentAlignment="Left"
-                                          VerticalContentAlignment="Center" />
-                                <Border Background="{StaticResource BrBgElevated}"
-                                        BorderBrush="{StaticResource BrBorderSubtle}"
-                                        BorderThickness="1" CornerRadius="8"
-                                        Width="16" Height="16"
-                                        Margin="10,0,0,0"
-                                        ToolTip.ShowDelay="100" Cursor="Help"
-                                        ToolTip.Tip="{DynamicResource TxtTooltipFsr4Int8}">
-                                    <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}"
-                                               FontSize="10" FontWeight="Bold"
-                                               HorizontalAlignment="Center" VerticalAlignment="Center"
-                                               Margin="0,-1,0,0"/>
-                                </Border>
-                            </StackPanel>
-                        </Border>
+                        <!-- Row 3, Col 0: FSR4 INT8 version selector -->
+                        <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal"
+                                    Margin="0,12,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="FSR4 INT8:"
+                                       Foreground="{StaticResource BrTextSecondary}"
+                                       VerticalAlignment="Center"
+                                       FontSize="{StaticResource FontSizeBody}"
+                                       Margin="0,0,8,0"/>
+                            <ComboBox Name="CmbExtrasVersion"
+                                      Width="170"
+                                      Classes="BtnSelector"
+                                      Padding="8,0,24,0"
+                                      HorizontalContentAlignment="Left"
+                                      VerticalContentAlignment="Center" />
+                            <Border Background="{StaticResource BrBgElevated}"
+                                    BorderBrush="{StaticResource BrBorderSubtle}"
+                                    BorderThickness="1" CornerRadius="8"
+                                    Width="16" Height="16"
+                                    Margin="10,0,0,0"
+                                    ToolTip.ShowDelay="100" Cursor="Help"
+                                    ToolTip.Tip="{DynamicResource TxtTooltipFsr4Int8}">
+                                <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}"
+                                           FontSize="10" FontWeight="Bold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Margin="0,-1,0,0"/>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- Row 3, Col 2: Install buttons -->
+                        <StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal"
+                                    Margin="0,4,0,0" VerticalAlignment="Center"
+                                    HorizontalAlignment="Right"
+                                    Name="InstallBtnGroup">
+                            <Button Name="BtnInstallManual"
+                                    Content="{DynamicResource TxtBtnManualInstall}"
+                                    Classes="BtnSuccess"
+                                    Padding="18,8"
+                                    Margin="0,0,10,0"
+                                    Click="BtnInstallManual_Click"/>
+                            <Button Name="BtnInstall"
+                                    Content="{DynamicResource TxtInstallOpti}"
+                                    Classes="BtnSuccess"
+                                    Padding="18,8"
+                                    Click="BtnInstall_Click"/>
+                        </StackPanel>
                     </Grid>
                 </Border>
             </Grid>

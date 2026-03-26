@@ -82,6 +82,7 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
@@ -93,7 +94,20 @@
                                   FontSize="12"
                                   Click="ChkSelectAll_Click"/>
 
-                        <TextBlock Grid.Column="1"
+                        <TextBox Grid.Column="1"
+                          Name="TxtSearch"
+                          Width="200"
+                          Height="28"
+                          Classes="BtnBase"
+                          Padding="8,4"
+                          FontSize="12"
+                          Watermark="{DynamicResource TxtSearchGames}"
+                          TextChanged="TxtSearch_TextChanged"
+                          LostFocus="TxtSearch_LostFocus"
+                          Margin="16,0,0,0"
+                          VerticalAlignment="Center"/>
+
+                        <TextBlock Grid.Column="2"
                                    Name="TxtSelectionCount"
                                    Text="0 games selected"
                                    Foreground="{StaticResource BrTextSecondary}"

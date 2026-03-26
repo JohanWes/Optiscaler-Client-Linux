@@ -21,7 +21,21 @@ public partial class BulkInstallWindow : Window
     private readonly GameInstallationService _installService;
     private readonly IGpuDetectionService _gpuService;
     private readonly ObservableCollection<BulkGameItem> _gameItems;
+    private readonly ObservableCollection<BulkGameItem> _filteredGameItems;
+    private List<BulkGameItem> _allGames = new List<BulkGameItem>();
     private bool _isInstalling = false;
+
+    public BulkInstallWindow()
+    {
+        InitializeComponent();
+        
+        // Initialize fields to avoid nullable warnings
+        _componentService = null!;
+        _installService = null!;
+        _gpuService = null!;
+        _gameItems = new ObservableCollection<BulkGameItem>();
+        _filteredGameItems = new ObservableCollection<BulkGameItem>();
+    }
 
     public BulkInstallWindow(
         ComponentManagementService componentService,
@@ -33,6 +47,7 @@ public partial class BulkInstallWindow : Window
         _componentService = componentService;
         _installService = installService;
         _gameItems = new ObservableCollection<BulkGameItem>();
+        _filteredGameItems = new ObservableCollection<BulkGameItem>();
 
         // Initialize GPU service
         if (OperatingSystem.IsWindows())
@@ -47,7 +62,7 @@ public partial class BulkInstallWindow : Window
         // Populate games list
         foreach (var game in games.OrderBy(g => g.Name))
         {
-            _gameItems.Add(new BulkGameItem
+            var gameItem = new BulkGameItem
             {
                 Game = game,
                 Name = game.Name,
@@ -58,13 +73,17 @@ public partial class BulkInstallWindow : Window
                 IsSelected = false, // Start with all items unchecked
                 OptiscalerVersion = game.OptiscalerVersion,
                 IsOptiscalerInstalled = game.IsOptiscalerInstalled
-            });
+            };
+            
+            _gameItems.Add(gameItem);
+            _allGames.Add(gameItem);
+            _filteredGameItems.Add(gameItem);
         }
 
         var gamesList = this.FindControl<ItemsControl>("GamesList");
         if (gamesList != null)
         {
-            gamesList.ItemsSource = _gameItems;
+            gamesList.ItemsSource = _filteredGameItems;
         }
 
         // Load versions
@@ -598,6 +617,48 @@ public partial class BulkInstallWindow : Window
             {
                 chkNukemFG.IsEnabled = true;
                 ToolTip.SetTip(chkNukemFG, null);
+            }
+        }
+    }
+
+    private void TxtSearch_TextChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            ApplyFilter(textBox.Text);
+        }
+    }
+
+    private void TxtSearch_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            // Clear focus when clicking outside
+            this.Focus();
+        }
+    }
+
+    private void ApplyFilter(string? searchText)
+    {
+        _filteredGameItems.Clear();
+        
+        if (string.IsNullOrWhiteSpace(searchText))
+        {
+            // Show all games
+            foreach (var game in _allGames)
+            {
+                _filteredGameItems.Add(game);
+            }
+        }
+        else
+        {
+            // Filter games
+            var filtered = _allGames.Where(g => 
+                g.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase)).ToList();
+            
+            foreach (var game in filtered)
+            {
+                _filteredGameItems.Add(game);
             }
         }
     }
