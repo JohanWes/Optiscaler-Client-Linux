@@ -92,6 +92,10 @@
     <x:String x:Key="TxtFakenvapiHelpTip">Engaña al juego haciéndole creer que posees una tarjeta gráfica NVIDIA. Esto permite eludir restricciones de hardware y habilitar tecnologías DLSS en tarjetas AMD o Intel.</x:String>
     <x:String x:Key="TxtNukemHelpTip">Modificación que reemplaza la generación de fotogramas nativa de DLSS por FSR 3 de AMD, permitiendo habilitar Frame Generation en cualquier GPU compatible.</x:String>
 
+    <x:String x:Key="TxtTooltipOptiScalerVersion">Selecciona la versión específica de OptiScaler que deseas instalar para este juego.</x:String>
+    <x:String x:Key="TxtTooltipInjectionMethod">Determina cómo se carga OptiScaler. Las opciones comunes son dxgi.dll o version.dll dependiendo de la compatibilidad del juego.</x:String>
+    <x:String x:Key="TxtTooltipFsr4Int8">Inyecta el DLL del mod FSR 4 INT8. Esto permite que GPUs no RDNA 4 usen características de FSR 4. Selecciona 'Ninguno' si tienes una GPU serie RX 9000 (RDNA 4).</x:String>
+
     <x:String x:Key="TxtOptiInstalled">OptiScaler Instalado</x:String>
     <x:String x:Key="TxtOptiNotInstalled">No instalado</x:String>
     <x:String x:Key="TxtNoOptiDetected">Ninguna versión detectada</x:String>
@@ -185,8 +189,8 @@ Esta versión no está disponible para descarga. Verificá tu conexión a intern
     <x:String x:Key="TxtInstalled">Instalado</x:String>
     <x:String x:Key="TxtInstallationSettings">Configuración de Instalación</x:String>
     <x:String x:Key="TxtVersion">Versión</x:String>
-    <x:String x:Key="TxtInstallFakenvapi">Instalar Fakenvapi</x:String>
-    <x:String x:Key="TxtInstallNukemFG">Instalar NukemFG</x:String>
+    <x:String x:Key="TxtInstallFakenvapi">Fakenvapi</x:String>
+    <x:String x:Key="TxtInstallNukemFG">NukemFG</x:String>
     <x:String x:Key="TxtCreateBackup">Crear respaldo</x:String>
     <x:String x:Key="TxtInstallSelected">Instalar Seleccionados</x:String>
     <x:String x:Key="TxtNoGames">Sin Juegos</x:String>

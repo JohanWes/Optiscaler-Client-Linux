@@ -91,6 +91,10 @@
     <x:String x:Key="TxtFakenvapiHelpTip">Oyunu kandırarak NVIDIA grafik kartı algılamasını sağlar, donanım kısıtlamalarını atlatmanıza ve AMD veya Intel GPU'larda DLSS teknolojilerini etkinleştirmenize olanak tanır.</x:String>
     <x:String x:Key="TxtNukemHelpTip">Nukem tarafından yapılan bir mod, yerel DLSS kare oluşturmayı AMD FSR 3 kare oluşturma ile değiştirerek, uyumlu herhangi bir GPU'da kare oluşturmayı etkinleştirir.</x:String>
 
+    <x:String x:Key="TxtTooltipOptiScalerVersion">Bu oyun için yüklemek istediğiniz belirli OptiScaler sürümünü seçin.</x:String>
+    <x:String x:Key="TxtTooltipInjectionMethod">OptiScaler'ın nasıl yüklendiğini belirler. Oyun uyumluluğuna bağlı olarak yaygın seçenekler dxgi.dll veya version.dll'dir.</x:String>
+    <x:String x:Key="TxtTooltipFsr4Int8">FSR 4 INT8 mod DLL'sini enjekte eder. Bu, RDNA 4 olmayan GPU'ların FSR 4 özelliklerini kullanmasına olanak tanır. RX 9000 serisi (RDNA 4) bir GPU'nuz varsa 'Yok'u seçin.</x:String>
+
     <x:String x:Key="TxtOptiInstalled">OptiScaler Yüklü</x:String>
     <x:String x:Key="TxtOptiNotInstalled">Yüklü Değil</x:String>
     <x:String x:Key="TxtNoOptiDetected">Sürüm algılanmadı</x:String>
@@ -175,5 +179,20 @@
     <x:String x:Key="TxtUpdateError">Güncelleme Hatası</x:String>
     <x:String x:Key="TxtNoUpdateFound">Uygulama zaten güncel.</x:String>
     <x:String x:Key="TxtUpdateCheckError">Güncellemeler kontrol edilirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.</x:String>
+
+    <x:String x:Key="TxtBtnBulkInstall">⚡  Toplu Yükleme</x:String>
+
+    <!-- BulkInstallWindow -->
+    <x:String x:Key="TxtBulkInstallWindow">OptiScaler Toplu Yükleme</x:String>
+    <x:String x:Key="TxtSelectAll">Tümünü Seç</x:String>
+    <x:String x:Key="TxtInstalled">Yüklendi</x:String>
+    <x:String x:Key="TxtInstallationSettings">Kurulum Ayarları</x:String>
+    <x:String x:Key="TxtVersion">Sürüm</x:String>
+    <x:String x:Key="TxtInstallFakenvapi">Fakenvapi</x:String>
+    <x:String x:Key="TxtInstallNukemFG">NukemFG</x:String>
+    <x:String x:Key="TxtCreateBackup">Yedek oluştur</x:String>
+    <x:String x:Key="TxtInstallSelected">Seçilenleri Yükle</x:String>
+    <x:String x:Key="TxtNoGames">Oyun Yok</x:String>
+    <x:String x:Key="TxtNoGamesFound">Oyun bulunamadı. Lütfen önce oyunları tarayın.</x:String>
 
 </ResourceDictionary>

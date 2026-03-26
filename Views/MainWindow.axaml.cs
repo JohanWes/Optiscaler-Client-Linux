@@ -238,7 +238,35 @@ namespace OptiscalerClient.Views
             {
                 tglBetaVersions.IsChecked = _componentService.Config.ShowBetaVersions;
             }
-            _isInitializingLanguage = false;
+
+            // Populate FSR4 INT8 default version selector
+            var cmbDefaultExtras = this.FindControl<ComboBox>("CmbDefaultExtrasVersion");
+            if (cmbDefaultExtras != null)
+            {
+                _isInitializingLanguage = true; // reuse flag to suppress SelectionChanged during init
+                cmbDefaultExtras.Items.Clear();
+                cmbDefaultExtras.Items.Add(new ComboBoxItem { Content = "None", Tag = "none" });
+                foreach (var ver in _componentService.ExtrasAvailableVersions)
+                {
+                    cmbDefaultExtras.Items.Add(new ComboBoxItem { Content = ver, Tag = ver });
+                }
+
+                var savedDefault = _componentService.Config.DefaultExtrasVersion;
+                cmbDefaultExtras.SelectedIndex = 0; // default: None
+                if (!string.IsNullOrEmpty(savedDefault) &&
+                    !savedDefault.Equals("none", StringComparison.OrdinalIgnoreCase))
+                {
+                    for (int i = 1; i < cmbDefaultExtras.Items.Count; i++)
+                    {
+                        if ((cmbDefaultExtras.Items[i] as ComboBoxItem)?.Tag?.ToString() == savedDefault)
+                        {
+                            cmbDefaultExtras.SelectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                _isInitializingLanguage = false;
+            }
         }
 
         private void CmbLanguage_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -296,6 +324,17 @@ namespace OptiscalerClient.Views
             if (sender is ToggleSwitch tgl)
             {
                 _componentService.Config.ShowBetaVersions = tgl.IsChecked ?? true;
+                _componentService.SaveConfiguration();
+            }
+        }
+
+        private void CmbDefaultExtrasVersion_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializingLanguage) return;
+            if (sender is ComboBox cmb && cmb.SelectedItem is ComboBoxItem item)
+            {
+                var ver = item.Tag?.ToString() ?? "none";
+                _componentService.Config.DefaultExtrasVersion = ver.Equals("none", StringComparison.OrdinalIgnoreCase) ? null : ver;
                 _componentService.SaveConfiguration();
             }
         }

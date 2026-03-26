@@ -1,4 +1,4 @@
-﻿namespace OptiscalerClient.Models;
+namespace OptiscalerClient.Models;
 
 public enum GamePlatform
 {
@@ -39,4 +39,5 @@ public class Game
 
     public bool IsOptiscalerInstalled { get; set; }
     public string? OptiscalerVersion { get; set; }
+    public string? Fsr4ExtraVersion { get; set; }
 }

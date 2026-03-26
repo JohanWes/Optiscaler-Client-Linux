@@ -34,13 +34,19 @@ namespace OptiscalerClient.Models
         public RepositoryConfig App { get; set; } = new() { RepoOwner = "Agustinm28", RepoName = "Optiscaler-Switcher" };
         public RepositoryConfig OptiScaler { get; set; } = new();
         public RepositoryConfig OptiScalerBetas { get; set; } = new();
+        public RepositoryConfig OptiScalerExtras { get; set; } = new();
         public RepositoryConfig Fakenvapi { get; set; } = new();
         public RepositoryConfig NukemFG { get; set; } = new();
         public string Language { get; set; } = "en";
         public bool Debug { get; set; } = false;
         public bool AutoScan { get; set; } = true;
         public bool AnimationsEnabled { get; set; } = true;
-        public bool ShowBetaVersions { get; set; } = false;
+        public bool ShowBetaVersions { get; set; } = true;
+        /// <summary>
+        /// The default FSR 4 INT8 extras version to pre-select in ManageGameWindow.
+        /// Null or "none" means "do not inject".
+        /// </summary>
+        public string? DefaultExtrasVersion { get; set; } = null;
         public ScanSourcesConfig ScanSources { get; set; } = new();
         public string SteamGridDBApiKey { get; set; } = string.Empty;
         public List<ScanExclusion> ScanExclusions { get; set; } = new();
@@ -77,5 +83,24 @@ namespace OptiscalerClient.Models
     {
         public DateTime LastUpdated { get; set; } = DateTime.MinValue;
         public List<OptiScalerReleaseEntry> Releases { get; set; } = new();
+    }
+
+    /// <summary>
+    /// A single OptiScaler Extras (FSR4 INT8 mod) release entry stored in the local cache.
+    /// </summary>
+    public class ExtrasReleaseEntry
+    {
+        public string Version { get; set; } = string.Empty;
+        public string? DownloadUrl { get; set; }
+        public bool IsLatest { get; set; }
+    }
+
+    /// <summary>
+    /// Local cache of OptiScaler Extras release metadata.
+    /// </summary>
+    public class ExtrasReleasesCache
+    {
+        public DateTime LastUpdated { get; set; } = DateTime.MinValue;
+        public List<ExtrasReleaseEntry> Releases { get; set; } = new();
     }
 }

@@ -91,6 +91,10 @@
     <x:String x:Key="TxtFakenvapiHelpTip">Oszukuje grę, aby wykryła kartę graficzną NVIDIA, pozwalając ominąć ograniczenia sprzętowe i włączyć technologie DLSS na GPU AMD lub Intel.</x:String>
     <x:String x:Key="TxtNukemHelpTip">Mod od Nukem, który zastępuje natywne generowanie klatek DLSS generowaniem klatek AMD FSR 3, włączając generowanie klatek na dowolnym kompatybilnym GPU.</x:String>
 
+    <x:String x:Key="TxtTooltipOptiScalerVersion">Wybierz konkretną wersję OptiScaler, którą chcesz zainstalować dla tej gry.</x:String>
+    <x:String x:Key="TxtTooltipInjectionMethod">Określa sposób ładowania OptiScaler. Typowe wybory to dxgi.dll lub version.dll w zależności od kompatybilności gry.</x:String>
+    <x:String x:Key="TxtTooltipFsr4Int8">Wstrzykuje bibliotekę DLL moda FSR 4 INT8. Pozwala to procesorom graficznym innym niż RDNA 4 na korzystanie z funkcji FSR 4. Wybierz 'Brak', jeśli masz kartę graficzną z serii RX 9000 (RDNA 4).</x:String>
+
     <x:String x:Key="TxtOptiInstalled">OptiScaler zainstalowany</x:String>
     <x:String x:Key="TxtOptiNotInstalled">Nie zainstalowany</x:String>
     <x:String x:Key="TxtNoOptiDetected">Nie wykryto wersji</x:String>
@@ -175,5 +179,20 @@
     <x:String x:Key="TxtUpdateError">Błąd aktualizacji</x:String>
     <x:String x:Key="TxtNoUpdateFound">Aplikacja jest już aktualna.</x:String>
     <x:String x:Key="TxtUpdateCheckError">Wystąpił problem podczas sprawdzania aktualizacji. Proszę spróbować ponownie później.</x:String>
+
+    <x:String x:Key="TxtBtnBulkInstall">⚡  Instalacja masowa</x:String>
+
+    <!-- BulkInstallWindow -->
+    <x:String x:Key="TxtBulkInstallWindow">Masowa instalacja OptiScaler</x:String>
+    <x:String x:Key="TxtSelectAll">Zaznacz wszystko</x:String>
+    <x:String x:Key="TxtInstalled">Zainstalowano</x:String>
+    <x:String x:Key="TxtInstallationSettings">Ustawienia instalacji</x:String>
+    <x:String x:Key="TxtVersion">Wersja</x:String>
+    <x:String x:Key="TxtInstallFakenvapi">Fakenvapi</x:String>
+    <x:String x:Key="TxtInstallNukemFG">NukemFG</x:String>
+    <x:String x:Key="TxtCreateBackup">Utwórz kopię zapasową</x:String>
+    <x:String x:Key="TxtInstallSelected">Zainstaluj wybrane</x:String>
+    <x:String x:Key="TxtNoGames">Brak gier</x:String>
+    <x:String x:Key="TxtNoGamesFound">Nie znaleziono gier. Proszę najpierw przeskanować gry.</x:String>
 
 </ResourceDictionary>

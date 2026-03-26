@@ -19,6 +19,7 @@ public partial class BulkInstallWindow : Window
 {
     private readonly ComponentManagementService _componentService;
     private readonly GameInstallationService _installService;
+    private readonly IGpuDetectionService _gpuService;
     private readonly ObservableCollection<BulkGameItem> _gameItems;
     private bool _isInstalling = false;
 
@@ -32,6 +33,16 @@ public partial class BulkInstallWindow : Window
         _componentService = componentService;
         _installService = installService;
         _gameItems = new ObservableCollection<BulkGameItem>();
+
+        // Initialize GPU service
+        if (OperatingSystem.IsWindows())
+        {
+            _gpuService = new WindowsGpuDetectionService();
+        }
+        else
+        {
+            _gpuService = null!;
+        }
 
         // Populate games list
         foreach (var game in games.OrderBy(g => g.Name))
@@ -74,6 +85,16 @@ public partial class BulkInstallWindow : Window
         {
             cmbOptiVersion.SelectionChanged += CmbOptiVersion_SelectionChanged;
         }
+
+        // Initialize injection method selector
+        var cmbInjectionMethod = this.FindControl<ComboBox>("CmbInjectionMethod");
+        if (cmbInjectionMethod != null)
+        {
+            cmbInjectionMethod.SelectedIndex = 0; // Default to dxgi.dll
+        }
+
+        // Populate FSR4 INT8 versions
+        PopulateExtrasComboBox();
 
         // Fade in animation
         var rootPanel = this.FindControl<Panel>("RootPanel");
@@ -275,6 +296,8 @@ public partial class BulkInstallWindow : Window
         if (selectedGames.Count == 0) return;
 
         var cmbOptiVersion = this.FindControl<ComboBox>("CmbOptiVersion");
+        var cmbInjectionMethod = this.FindControl<ComboBox>("CmbInjectionMethod");
+        var cmbExtrasVersion = this.FindControl<ComboBox>("CmbExtrasVersion");
         var chkFakenvapi = this.FindControl<CheckBox>("ChkFakenvapi");
         var chkNukemFG = this.FindControl<CheckBox>("ChkNukemFG");
 
@@ -283,6 +306,16 @@ public partial class BulkInstallWindow : Window
         string version = selectedItem.Tag?.ToString() ?? "";
         bool installFakenvapi = chkFakenvapi?.IsChecked == true;
         bool installNukemFG = chkNukemFG?.IsChecked == true;
+
+        // Get injection method
+        var injectionItem = cmbInjectionMethod?.SelectedItem as ComboBoxItem;
+        string injectionMethod = injectionItem?.Tag?.ToString() ?? "dxgi.dll";
+
+        // Get selected Extras (FSR4 INT8) version
+        var selectedExtrasItem = cmbExtrasVersion?.SelectedItem as ComboBoxItem;
+        var selectedExtrasVersion = selectedExtrasItem?.Tag?.ToString();
+        bool injectExtras = !string.IsNullOrEmpty(selectedExtrasVersion) &&
+                            !selectedExtrasVersion.Equals("none", StringComparison.OrdinalIgnoreCase);
 
         _isInstalling = true;
         
@@ -325,7 +358,7 @@ public partial class BulkInstallWindow : Window
                     _installService.InstallOptiScaler(
                         gameItem.Game,
                         optiCacheDir,
-                        "dxgi.dll", // Default injection method
+                        injectionMethod, // Use selected injection method
                         installFakenvapi,
                         fakeCacheDir,
                         installNukemFG,
@@ -333,6 +366,40 @@ public partial class BulkInstallWindow : Window
                         optiscalerVersion: version
                     );
                 });
+
+                // ── FSR4 INT8 DLL injection ────────────────────────────────────────
+                if (injectExtras && !string.IsNullOrEmpty(selectedExtrasVersion))
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (txtProgressStatus != null) txtProgressStatus.Text = $"Downloading FSR4 INT8 v{selectedExtrasVersion} for {gameItem.Name}...";
+                        if (progressBar != null) progressBar.IsIndeterminate = false;
+                    });
+
+                    string extrasDllPath;
+                    try
+                    {
+                        var extrasProgress = new Progress<double>(p =>
+                            Dispatcher.UIThread.Post(() => { if (progressBar != null) progressBar.Value = p; }));
+
+                        extrasDllPath = await _componentService.DownloadExtrasDllAsync(selectedExtrasVersion, extrasProgress);
+                    }
+                    catch (Exception ex)
+                    {
+                        DebugWindow.Log($"[BulkInstall] Failed to download FSR4 INT8 v{selectedExtrasVersion}: {ex.Message}");
+                        continue; // Skip FSR4 installation but continue with OptiScaler
+                    }
+
+                    // Copy FSR4 INT8 DLL to game directory
+                    await Task.Run(() =>
+                    {
+                        var gameDir = _installService.DetermineInstallDirectory(gameItem.Game) ?? gameItem.Game.InstallPath;
+                        var destPath = System.IO.Path.Combine(gameDir, "amd_fidelityfx_upscaler_dx12.dll");
+                        System.IO.File.Copy(extrasDllPath, destPath, overwrite: true);
+                        gameItem.Game.Fsr4ExtraVersion = selectedExtrasVersion;
+                        DebugWindow.Log($"[BulkInstall] Copied FSR4 INT8 DLL to {destPath} for {gameItem.Name}");
+                    });
+                }
 
                 gameItem.IsInstalled = true;
                 gameItem.CanInstall = false;
@@ -389,6 +456,110 @@ public partial class BulkInstallWindow : Window
     private void CmbOptiVersion_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         UpdateCheckboxStatesForVersion(sender as ComboBox);
+    }
+
+    /// <summary>
+    /// Populates CmbExtrasVersion with available Extras versions + a "None" option.
+    /// Selects the default based on GPU generation: RDNA 4 → None, others → global default or latest.
+    /// </summary>
+    private void PopulateExtrasComboBox()
+    {
+        var cmb = this.FindControl<ComboBox>("CmbExtrasVersion");
+        if (cmb == null) return;
+
+        cmb.Items.Clear();
+
+        // Add "None" option
+        var noneStack = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 6 };
+        noneStack.Children.Add(new TextBlock { Text = "None", VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center });
+        cmb.Items.Add(new ComboBoxItem { Content = noneStack, Tag = "none" });
+
+        // Add available versions
+        var versions = _componentService.ExtrasAvailableVersions;
+        foreach (var ver in versions)
+        {
+            var isLatest = ver == _componentService.LatestExtrasVersion;
+            var stack = new StackPanel { Orientation = Avalonia.Layout.Orientation.Horizontal, Spacing = 6 };
+            stack.Children.Add(new TextBlock { Text = ver, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center });
+            if (isLatest)
+            {
+                var badge = new Border
+                {
+                    Background = new SolidColorBrush(Color.Parse("#7C3AED")),
+                    CornerRadius = new CornerRadius(4),
+                    Padding = new Thickness(5, 1),
+                    Margin = new Thickness(0, 0, 4, 0),
+                    Child = new TextBlock { Text = "LATEST", FontSize = 10, Foreground = Brushes.White, FontWeight = FontWeight.Bold, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center }
+                };
+                stack.Children.Add(badge);
+            }
+            cmb.Items.Add(new ComboBoxItem { Content = stack, Tag = ver });
+        }
+
+        // Determine default selection
+        bool isRdna4 = false;
+        if (OperatingSystem.IsWindows() && _gpuService != null)
+        {
+            try
+            {
+                var gpu = _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                // RDNA 4 = Radeon RX 9000 series (GPU name contains "RX 9" or similar)
+                isRdna4 = gpu != null && gpu.Vendor == GpuVendor.AMD &&
+                          (gpu.Name.Contains(" 9", StringComparison.OrdinalIgnoreCase) ||
+                           gpu.Name.Contains("RX 9", StringComparison.OrdinalIgnoreCase));
+            }
+            catch { /* silent */ }
+        }
+
+        // Determine target index
+        int targetIndex = 0; // Default to None (index 0)
+        var globalDefault = _componentService.Config.DefaultExtrasVersion;
+
+        if (!string.IsNullOrEmpty(globalDefault))
+        {
+            if (globalDefault.Equals("none", StringComparison.OrdinalIgnoreCase))
+            {
+                targetIndex = 0;
+            }
+            else
+            {
+                // Global preference exists (e.g. "v1.0.0"), find it in items
+                for (int i = 1; i < cmb.Items.Count; i++)
+                {
+                    var itemVer = (cmb.Items[i] as ComboBoxItem)?.Tag?.ToString();
+                    if (itemVer == globalDefault)
+                    {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+
+                // If not found (e.g. it was an old version), fallback logic:
+                if (targetIndex == 0)
+                {
+                    // Applying same "intelligent" logic if user's favorite version is gone
+                    if (!isRdna4 && versions.Count > 0)
+                    {
+                        targetIndex = 1; // latest
+                    }
+                }
+            }
+        }
+        else
+        {
+            // No global default preference set (DefaultExtrasVersion is null/empty)
+            // → Use "intelligent" logic
+            if (!isRdna4 && versions.Count > 0)
+            {
+                targetIndex = 1; // Latest
+            }
+            else
+            {
+                targetIndex = 0; // None
+            }
+        }
+
+        cmb.SelectedIndex = targetIndex;
     }
 
     private void UpdateCheckboxStatesForVersion(ComboBox? cmb)

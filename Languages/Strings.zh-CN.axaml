@@ -91,6 +91,10 @@
     <x:String x:Key="TxtFakenvapiHelpTip">欺骗游戏检测NVIDIA显卡，允许您绕过硬件限制并在AMD或Intel GPU上启用DLSS技术。</x:String>
     <x:String x:Key="TxtNukemHelpTip">Nukem的模组，用AMD FSR 3帧生成替换原生DLSS帧生成，在任何兼容的GPU上启用帧生成。</x:String>
 
+    <x:String x:Key="TxtTooltipOptiScalerVersion">选择要为此游戏安装的特定 OptiScaler 版本。</x:String>
+    <x:String x:Key="TxtTooltipInjectionMethod">决定 OptiScaler 的加载方式。常见选择是 dxgi.dll 或 version.dll，具体取决于游戏兼容性。</x:String>
+    <x:String x:Key="TxtTooltipFsr4Int8">注入 FSR 4 INT8 模组 DLL。这允许非 RDNA 4 GPU 使用 FSR 4 功能。如果您拥有 RX 9000 系列 (RDNA 4) GPU，请选择“无”。</x:String>
+
     <x:String x:Key="TxtOptiInstalled">OptiScaler已安装</x:String>
     <x:String x:Key="TxtOptiNotInstalled">未安装</x:String>
     <x:String x:Key="TxtNoOptiDetected">未检测到版本</x:String>
@@ -175,5 +179,20 @@
     <x:String x:Key="TxtUpdateError">更新错误</x:String>
     <x:String x:Key="TxtNoUpdateFound">应用程序已是最新版本。</x:String>
     <x:String x:Key="TxtUpdateCheckError">检查更新时出现问题。请稍后再试。</x:String>
+
+    <x:String x:Key="TxtBtnBulkInstall">⚡  批量安装</x:String>
+
+    <!-- BulkInstallWindow -->
+    <x:String x:Key="TxtBulkInstallWindow">OptiScaler 批量安装</x:String>
+    <x:String x:Key="TxtSelectAll">全选</x:String>
+    <x:String x:Key="TxtInstalled">已安装</x:String>
+    <x:String x:Key="TxtInstallationSettings">安装设置</x:String>
+    <x:String x:Key="TxtVersion">版本</x:String>
+    <x:String x:Key="TxtInstallFakenvapi">Fakenvapi</x:String>
+    <x:String x:Key="TxtInstallNukemFG">NukemFG</x:String>
+    <x:String x:Key="TxtCreateBackup">创建备份</x:String>
+    <x:String x:Key="TxtInstallSelected">安装所选项目</x:String>
+    <x:String x:Key="TxtNoGames">无游戏</x:String>
+    <x:String x:Key="TxtNoGamesFound">未找到游戏。请先扫描游戏。</x:String>
 
 </ResourceDictionary>

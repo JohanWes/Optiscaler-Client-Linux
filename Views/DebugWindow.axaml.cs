@@ -17,9 +17,9 @@ namespace OptiscalerClient.Views
         {
             InitializeComponent();
             _instance = this;
-            
+
             this.Closed += (s, e) => _instance = null;
-            
+
             Log("Debug Window Initialized");
         }
 
@@ -47,7 +47,7 @@ namespace OptiscalerClient.Views
                     string line = $"[{timestamp}] {message}{Environment.NewLine}";
                     _instance._logContent.Append(line);
                     txtLogs.Text = _instance._logContent.ToString();
-                    
+
                     if (scroll != null) scroll.ScrollToEnd();
                 }
             });

@@ -127,10 +127,10 @@ namespace OptiscalerClient.Views
         private async Task LoadVersionsAsync()
         {
             var componentService = new ComponentManagementService();
-            if (componentService.OptiScalerAvailableVersions.Count == 0)
-            {
-                await componentService.CheckForUpdatesAsync();
-            }
+            
+            // Always call CheckForUpdatesAsync to ensure extras and latest versions are fetched.
+            // Internal rate limiter in the service (15m) handles efficiency.
+            await componentService.CheckForUpdatesAsync();
 
             Dispatcher.UIThread.Post(() =>
             {
@@ -214,8 +214,110 @@ namespace OptiscalerClient.Views
 
                 // Wire SelectionChanged here so it only fires on user interaction, not during init
                 cmbOptiVersion.SelectionChanged += CmbOptiVersion_SelectionChanged;
+
+                // ── Populate FSR4 INT8 Extras selector ────────────────────────────
+                PopulateExtrasComboBox(componentService);
             });
         }
+
+        /// <summary>
+        /// Populates CmbExtrasVersion with available Extras versions + a "None" option.
+        /// Selects the default based on GPU generation: RDNA 4 → None, others → global default or latest.
+        /// </summary>
+        private void PopulateExtrasComboBox(ComponentManagementService componentService)
+        {
+            var cmb = this.FindControl<ComboBox>("CmbExtrasVersion");
+            if (cmb == null) return;
+
+            cmb.Items.Clear();
+
+            // Option 0: None
+            cmb.Items.Add(new ComboBoxItem { Content = "None", Tag = "none" });
+
+            var versions = componentService.ExtrasAvailableVersions;
+            foreach (var ver in versions)
+            {
+                var isLatest = ver == componentService.LatestExtrasVersion;
+                var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
+                stack.Children.Add(new TextBlock { Text = ver, VerticalAlignment = VerticalAlignment.Center });
+                if (isLatest)
+                {
+                    stack.Children.Add(new Border
+                    {
+                        CornerRadius = new CornerRadius(4),
+                        Background   = new SolidColorBrush(Color.Parse("#7C3AED")),
+                        Padding      = new Thickness(5, 1),
+                        Child        = new TextBlock { Text = "LATEST", FontSize = 10, Foreground = Brushes.White, FontWeight = Avalonia.Media.FontWeight.Bold, VerticalAlignment = VerticalAlignment.Center }
+                    });
+                }
+                cmb.Items.Add(new ComboBoxItem { Content = stack, Tag = ver });
+            }
+
+            // Determine default selection
+            bool isRdna4 = false;
+            if (OperatingSystem.IsWindows() && _gpuService != null)
+            {
+                try
+                {
+                    var gpu = _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                    // RDNA 4 = Radeon RX 9000 series (GPU name contains "RX 9" or similar)
+                    isRdna4 = gpu != null && gpu.Vendor == GpuVendor.AMD &&
+                              (gpu.Name.Contains(" 9", StringComparison.OrdinalIgnoreCase) ||
+                               gpu.Name.Contains("RX 9", StringComparison.OrdinalIgnoreCase));
+                }
+                catch { /* silent */ }
+            }
+
+            // Determine target index
+            int targetIndex     = 0; // Default to None (index 0)
+            var globalDefault = componentService.Config.DefaultExtrasVersion;
+
+            if (!string.IsNullOrEmpty(globalDefault))
+            {
+                if (globalDefault.Equals("none", StringComparison.OrdinalIgnoreCase))
+                {
+                    targetIndex = 0;
+                }
+                else
+                {
+                    // Global preference exists (e.g. "v1.0.0"), find it in items
+                    for (int i = 1; i < cmb.Items.Count; i++)
+                    {
+                        var itemVer = (cmb.Items[i] as ComboBoxItem)?.Tag?.ToString();
+                        if (itemVer == globalDefault)
+                        {
+                            targetIndex = i;
+                            break;
+                        }
+                    }
+
+                    // If not found (e.g. it was an old version), fallback logic:
+                    if (targetIndex == 0)
+                    {
+                        // Applying same "intelligent" logic if user's favorite version is gone
+                        if (!isRdna4 && versions.Count > 0)
+                        {
+                            targetIndex = 1; // latest
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // No global default preference set (DefaultExtrasVersion is null/empty)
+                // → Use "intelligent" logic
+                if (!isRdna4 && versions.Count > 0)
+                {
+                    targetIndex = 1; // Latest
+                }
+                else
+                {
+                    targetIndex = 0; // None
+                }
+            }
+
+            cmb.SelectedIndex = targetIndex;
+        }  // end PopulateExtrasComboBox
 
         private void UpdateCheckboxStatesForVersion(ComboBox? cmb)
         {
@@ -339,16 +441,23 @@ namespace OptiscalerClient.Views
 
         private async Task ExecuteInstallAsync(bool isManualMode)
         {
-            var btnInstall = this.FindControl<Button>("BtnInstall");
-            var btnInstallManual = this.FindControl<Button>("BtnInstallManual");
-            var btnUninstall = this.FindControl<Button>("BtnUninstall");
-            var cmbOptiVersion = this.FindControl<ComboBox>("CmbOptiVersion");
-            var bdProgress = this.FindControl<Border>("BdProgress");
-            var prgDownload = this.FindControl<ProgressBar>("PrgDownload");
-            var txtProgressState = this.FindControl<TextBlock>("TxtProgressState");
+            var btnInstall        = this.FindControl<Button>("BtnInstall");
+            var btnInstallManual  = this.FindControl<Button>("BtnInstallManual");
+            var btnUninstall      = this.FindControl<Button>("BtnUninstall");
+            var cmbOptiVersion    = this.FindControl<ComboBox>("CmbOptiVersion");
+            var cmbExtrasVersion  = this.FindControl<ComboBox>("CmbExtrasVersion");
+            var bdProgress        = this.FindControl<Border>("BdProgress");
+            var prgDownload       = this.FindControl<ProgressBar>("PrgDownload");
+            var txtProgressState  = this.FindControl<TextBlock>("TxtProgressState");
             var cmbInjectionMethod = this.FindControl<ComboBox>("CmbInjectionMethod");
             var chkInstallFakenvapi = this.FindControl<CheckBox>("ChkInstallFakenvapi");
-            var chkInstallNukemFG = this.FindControl<CheckBox>("ChkInstallNukemFG");
+            var chkInstallNukemFG   = this.FindControl<CheckBox>("ChkInstallNukemFG");
+
+            // Read selected Extras (FSR4 INT8) version before any async work
+            var selectedExtrasItem   = cmbExtrasVersion?.SelectedItem as ComboBoxItem;
+            var selectedExtrasVersion = selectedExtrasItem?.Tag?.ToString();
+            bool injectExtras = !string.IsNullOrEmpty(selectedExtrasVersion) &&
+                                !selectedExtrasVersion.Equals("none", StringComparison.OrdinalIgnoreCase);
 
             try
             {
@@ -532,6 +641,63 @@ namespace OptiscalerClient.Views
                 var installedComponents = "OptiScaler";
                 if (installFakenvapi) installedComponents += " + Fakenvapi";
                 if (installNukemFG) installedComponents += " + NukemFG";
+
+                // ── FSR4 INT8 DLL injection ────────────────────────────────────────
+                if (injectExtras && !string.IsNullOrEmpty(selectedExtrasVersion))
+                {
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (bdProgress != null) bdProgress.IsVisible = true;
+                        if (txtProgressState != null) txtProgressState.Text = $"Downloading FSR4 INT8 v{selectedExtrasVersion}...";
+                        if (prgDownload != null) prgDownload.IsIndeterminate = false;
+                    });
+
+                    string extrasDllPath;
+                    try
+                    {
+                        var extrasProgress = new Progress<double>(p =>
+                            Dispatcher.UIThread.Post(() => { if (prgDownload != null) prgDownload.Value = p; }));
+
+                        extrasDllPath = await componentService.DownloadExtrasDllAsync(selectedExtrasVersion, extrasProgress);
+                    }
+                    catch (Exception ex)
+                    {
+                        Dispatcher.UIThread.Post(() => { if (bdProgress != null) bdProgress.IsVisible = false; });
+                        await new ConfirmDialog(this, "Warning",
+                            $"FSR4 INT8 DLL download failed (OptiScaler was still installed):\n{ex.Message}").ShowDialog<object>(this);
+                        goto SkipExtras;
+                    }
+
+                    // Copy DLL into the actual game install directory (overwrite the placeholder)
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (txtProgressState != null) txtProgressState.Text = "Injecting FSR4 INT8 DLL...";
+                        if (prgDownload != null) { prgDownload.IsIndeterminate = true; }
+                    });
+
+                    await Task.Run(() =>
+                    {
+                        var installSvc = new GameInstallationService();
+                        var gameDir    = installSvc.DetermineInstallDirectory(_game) ?? _game.InstallPath;
+                        var destPath   = System.IO.Path.Combine(gameDir, "amd_fidelityfx_upscaler_dx12.dll");
+                        File.Copy(extrasDllPath, destPath, overwrite: true);
+                        _game.Fsr4ExtraVersion = selectedExtrasVersion;
+                        DebugWindow.Log($"[ExtrasInject] Copied DLL to {destPath} and set version to {selectedExtrasVersion}");
+                    });
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (prgDownload != null) prgDownload.IsIndeterminate = false;
+                        if (bdProgress != null) bdProgress.IsVisible = false;
+                    });
+
+                    installedComponents += " + FSR4 INT8";
+                }
+                else
+                {
+                    _game.Fsr4ExtraVersion = null;
+                }
+                SkipExtras:
 
                 NeedsScan = true;
                 UpdateStatus();
@@ -723,6 +889,12 @@ namespace OptiscalerClient.Views
 
                 if (File.Exists(System.IO.Path.Combine(_game.InstallPath, "dlssg_to_fsr3_amd_is_better.dll")))
                     components.Add("NukemFG: installed");
+
+                bool fsr4DllExists = File.Exists(System.IO.Path.Combine(_game.InstallPath, "amd_fidelityfx_upscaler_dx12.dll"));
+                if (fsr4DllExists && !string.IsNullOrEmpty(_game.Fsr4ExtraVersion))
+                {
+                    components.Add($"FSR 4 INT8 mod: {_game.Fsr4ExtraVersion}");
+                }
             }
 
             var lstComponents = this.FindControl<ListBox>("LstComponents");

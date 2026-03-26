@@ -456,7 +456,9 @@ namespace OptiscalerClient.Services
                     // Fakenvapi
                     "nvapi64.dll", "fakenvapi.ini",
                     // NukemFG
-                    "dlssg_to_fsr3_amd_is_better.dll"
+                    "dlssg_to_fsr3_amd_is_better.dll",
+                    // FSR 4 INT8 mod
+                    "amd_fidelityfx_upscaler_dx12.dll"
                 };
 
                 foreach (var dir in dirsToScan)
@@ -491,6 +493,7 @@ namespace OptiscalerClient.Services
             // Clear game state immediately so the UI reflects the uninstallation
             game.IsOptiscalerInstalled = false;
             game.OptiscalerVersion = null;
+            game.Fsr4ExtraVersion = null;
 
             // Re-analyze to refresh DLSS/FSR/XeSS detection after files were removed/restored
             var analyzer = new GameAnalyzerService();

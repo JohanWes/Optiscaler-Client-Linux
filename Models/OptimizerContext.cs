@@ -18,6 +18,9 @@ namespace OptiscalerClient.Models
     [JsonSerializable(typeof(OptiScalerReleaseEntry))]
     [JsonSerializable(typeof(OptiScalerReleasesCache))]
     [JsonSerializable(typeof(List<OptiScalerReleaseEntry>))]
+    [JsonSerializable(typeof(ExtrasReleaseEntry))]
+    [JsonSerializable(typeof(ExtrasReleasesCache))]
+    [JsonSerializable(typeof(List<ExtrasReleaseEntry>))]
     internal partial class OptimizerContext : JsonSerializerContext
     {
     }

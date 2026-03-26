@@ -91,6 +91,10 @@
     <x:String x:Key="TxtFakenvapiHelpTip">ゲームをだましてNVIDIAグラフィックカードを検出させ、ハードウェア制限を回避してAMDまたはIntel GPUでDLSS技術を有効にできるようにします。</x:String>
     <x:String x:Key="TxtNukemHelpTip">Nukemによるmodで、ネイティブのDLSSフレーム生成をAMD FSR 3フレーム生成に置き換え、互換性のある任意のGPUでフレーム生成を有効にします。</x:String>
 
+    <x:String x:Key="TxtTooltipOptiScalerVersion">このゲームにインストールする OptiScaler の特定のバージョンを選択します。</x:String>
+    <x:String x:Key="TxtTooltipInjectionMethod">OptiScaler のロード方法を決定します。一般的な選択肢は、ゲームの互換性に応じて dxgi.dll または version.dll です。</x:String>
+    <x:String x:Key="TxtTooltipFsr4Int8">FSR 4 INT8 Mod DLL を挿入します。これにより、RDNA 4 以外の GPU でも FSR 4 機能を使用できるようになります。RX 9000 シリーズ (RDNA 4) GPU をお持ちの場合は、「なし」を選択してください。</x:String>
+
     <x:String x:Key="TxtOptiInstalled">OptiScalerがインストール済み</x:String>
     <x:String x:Key="TxtOptiNotInstalled">未インストール</x:String>
     <x:String x:Key="TxtNoOptiDetected">バージョンが検出されません</x:String>
@@ -175,5 +179,20 @@
     <x:String x:Key="TxtUpdateError">更新エラー</x:String>
     <x:String x:Key="TxtNoUpdateFound">アプリケーションはすでに最新です。</x:String>
     <x:String x:Key="TxtUpdateCheckError">更新の確認中に問題が発生しました。後でもう一度お試しください。</x:String>
+
+    <x:String x:Key="TxtBtnBulkInstall">⚡  一括インストール</x:String>
+
+    <!-- BulkInstallWindow -->
+    <x:String x:Key="TxtBulkInstallWindow">OptiScaler 一括インストール</x:String>
+    <x:String x:Key="TxtSelectAll">すべて選択</x:String>
+    <x:String x:Key="TxtInstalled">インストール済み</x:String>
+    <x:String x:Key="TxtInstallationSettings">インストール設定</x:String>
+    <x:String x:Key="TxtVersion">バージョン</x:String>
+    <x:String x:Key="TxtInstallFakenvapi">Fakenvapi</x:String>
+    <x:String x:Key="TxtInstallNukemFG">NukemFG</x:String>
+    <x:String x:Key="TxtCreateBackup">バックアップを作成</x:String>
+    <x:String x:Key="TxtInstallSelected">選択したものをインストール</x:String>
+    <x:String x:Key="TxtNoGames">ゲームなし</x:String>
+    <x:String x:Key="TxtNoGamesFound">ゲームが見つかりませんでした。まずゲームをスキャンしてください。</x:String>
 
 </ResourceDictionary>

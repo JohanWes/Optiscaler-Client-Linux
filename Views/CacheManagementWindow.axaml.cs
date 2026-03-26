@@ -59,45 +59,66 @@ namespace OptiscalerClient.Views
         private void LoadCacheItems()
         {
             var pnlVersions = this.FindControl<StackPanel>("PnlVersions");
-            if (pnlVersions == null) return;
+            var pnlExtras = this.FindControl<StackPanel>("PnlExtrasVersions");
+            if (pnlVersions == null || pnlExtras == null) return;
 
             pnlVersions.Children.Clear();
+            pnlExtras.Children.Clear();
+
             var versions = _componentService.GetDownloadedOptiScalerVersions();
+            var extras = _componentService.GetDownloadedExtrasVersions();
 
             var txtCacheInfo = this.FindControl<TextBlock>("TxtCacheInfo");
             if (txtCacheInfo != null)
             {
-                if (versions.Count == 1)
-                {
-                    txtCacheInfo.Text = Application.Current?.FindResource("TxtVersionStored") as string ?? "1 version stored locally.";
-                }
-                else
-                {
-                    var format = Application.Current?.FindResource("TxtVersionsStored") as string ?? "{0} versions stored locally.";
-                    txtCacheInfo.Text = string.Format(format, versions.Count);
-                }
+                int totalCount = versions.Count + extras.Count;
+                txtCacheInfo.Text = $"{totalCount} items stored locally (OptiScaler & FSR4 Extras).";
             }
 
+            // Populate OptiScaler Versions
             if (!versions.Any())
             {
                 pnlVersions.Children.Add(new TextBlock
                 {
-                    Text = "No versions cached yet.",
+                    Text = "No OptiScaler versions cached.",
                     Foreground = Brushes.Gray,
+                    FontSize = 11,
                     HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 40, 0, 0)
+                    Margin = new Thickness(0, 10)
                 });
-                return;
+            }
+            else
+            {
+                foreach (var ver in versions)
+                {
+                    var card = CreateVersionCard(ver, isExtras: false);
+                    pnlVersions.Children.Add(card);
+                }
             }
 
-            foreach (var ver in versions)
+            // Populate Extras Versions
+            if (!extras.Any())
             {
-                var card = CreateVersionCard(ver);
-                pnlVersions.Children.Add(card);
+                pnlExtras.Children.Add(new TextBlock
+                {
+                    Text = "No FSR4 Extras cached.",
+                    Foreground = Brushes.Gray,
+                    FontSize = 11,
+                    HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 10)
+                });
+            }
+            else
+            {
+                foreach (var ver in extras)
+                {
+                    var card = CreateVersionCard(ver, isExtras: true);
+                    pnlExtras.Children.Add(card);
+                }
             }
         }
 
-        private Border CreateVersionCard(string version)
+        private Border CreateVersionCard(string version, bool isExtras)
         {
             var grid = new Grid
             {
@@ -113,7 +134,8 @@ namespace OptiscalerClient.Views
                 Foreground = Application.Current?.FindResource("BrTextPrimary") as IBrush ?? Brushes.White
             });
 
-            if (version == _componentService.OptiScalerVersion)
+            // Check if it's the currently selected main OptiScaler version
+            if (!isExtras && version == _componentService.OptiScalerVersion)
             {
                 stack.Children.Add(new TextBlock
                 {
@@ -132,7 +154,7 @@ namespace OptiscalerClient.Views
                 Classes = { "BtnSecondary" },
                 Padding = new Thickness(12, 4),
                 FontSize = 11,
-                Tag = version
+                Tag = new VersionDeleteInfo { Version = version, IsExtras = isExtras }
             };
             btnDelete.Click += BtnDelete_Click;
 
@@ -150,12 +172,20 @@ namespace OptiscalerClient.Views
             };
         }
 
+        private class VersionDeleteInfo
+        {
+            public string Version { get; set; } = "";
+            public bool IsExtras { get; set; }
+        }
+
         private async void BtnDelete_Click(object? sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is string ver)
+            if (sender is Button btn && btn.Tag is VersionDeleteInfo info)
             {
-                var title = "Delete Version";
-                var msg = $"Are you sure you want to delete OptiScaler {ver} from cache?";
+                var title = info.IsExtras ? "Delete FSR4 Extra" : "Delete OptiScaler Version";
+                var msg = info.IsExtras 
+                    ? $"Are you sure you want to delete FSR4 INT8 Extra {info.Version}?"
+                    : $"Are you sure you want to delete OptiScaler {info.Version} from cache?";
 
                 var dialog = new ConfirmDialog(this, title, msg, false);
                 var result = await dialog.ShowDialog<bool>(this);
@@ -164,7 +194,11 @@ namespace OptiscalerClient.Views
                 {
                     try
                     {
-                        _componentService.DeleteOptiScalerCache(ver);
+                        if (info.IsExtras)
+                            _componentService.DeleteExtrasCache(info.Version);
+                        else
+                            _componentService.DeleteOptiScalerCache(info.Version);
+                        
                         LoadCacheItems();
                     }
                     catch (Exception ex)

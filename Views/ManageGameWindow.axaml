@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         x:Class="OptiscalerClient.Views.ManageGameWindow"
         Title="{DynamicResource TxtManageGameWindow}"
-        Height="580" Width="1080"
+        Height="618" Width="1080"
         SystemDecorations="None"
         TransparencyLevelHint="Transparent"
         Background="Transparent"
@@ -231,7 +231,7 @@
                         BorderThickness="0,1,0,0"
                         CornerRadius="0,0,12,12"
                         Padding="24,16">
-                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,*">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,*">
 
                         <!-- Row 0: Beta info panel spanning all columns (appears at the top) -->
                         <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
@@ -265,10 +265,23 @@
                                        FontSize="{StaticResource FontSizeBody}"
                                        Width="65"/>
                             <ComboBox Name="CmbOptiVersion"
-                                      Width="180"
+                                      Width="185"
                                       Classes="BtnSelector"
                                       SelectedIndex="0"
+                                      HorizontalContentAlignment="Left"
                                       VerticalContentAlignment="Center" />
+                            <Border Background="{StaticResource BrBgElevated}"
+                                    BorderBrush="{StaticResource BrBorderSubtle}"
+                                    BorderThickness="1" CornerRadius="8"
+                                    Width="16" Height="16"
+                                    Margin="10,0,0,0"
+                                    ToolTip.ShowDelay="100" Cursor="Help"
+                                    ToolTip.Tip="{DynamicResource TxtTooltipOptiScalerVersion}">
+                                <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}"
+                                            FontSize="10" FontWeight="Bold"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Margin="0,-1,0,0"/>
+                            </Border>
                         </StackPanel>
 
                         <!-- Row 1, Col 2: NukemFG (left) + Uninstall button (right) -->
@@ -290,8 +303,8 @@
                                     Click="BtnUninstall_Click"/>
                         </Grid>
 
-                        <!-- Vertical divider spanning rows 1 and 2 -->
-                        <Border Grid.Row="1" Grid.RowSpan="2" Grid.Column="1"
+                        <!-- Vertical divider spanning rows 1, 2 and 3 -->
+                        <Border Grid.Row="1" Grid.RowSpan="3" Grid.Column="1"
                                 Width="1"
                                 Background="{StaticResource BrBorderSubtle}"
                                 Margin="20,0"/>
@@ -304,7 +317,7 @@
                                        FontSize="{StaticResource FontSizeBody}"
                                        Width="65"/>
                             <ComboBox Name="CmbInjectionMethod"
-                                      Width="130"
+                                      Width="185"
                                       Classes="BtnSelector"
                                       SelectedIndex="0"
                                       VerticalContentAlignment="Center">
@@ -316,6 +329,18 @@
                                 <ComboBoxItem Content="wininet.dll"  Tag="wininet.dll"/>
                                 <ComboBoxItem Content="winhttp.dll"  Tag="winhttp.dll"/>
                             </ComboBox>
+                            <Border Background="{StaticResource BrBgElevated}"
+                                    BorderBrush="{StaticResource BrBorderSubtle}"
+                                    BorderThickness="1" CornerRadius="8"
+                                    Width="16" Height="16"
+                                    Margin="10,0,0,0"
+                                    ToolTip.ShowDelay="100" Cursor="Help"
+                                    ToolTip.Tip="{DynamicResource TxtTooltipInjectionMethod}">
+                                <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}"
+                                            FontSize="10" FontWeight="Bold"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                                            Margin="0,-1,0,0"/>
+                            </Border>
                         </StackPanel>
 
                         <!-- Row 2, Col 2: Fakenvapi (left) + install buttons (right) -->
@@ -342,6 +367,37 @@
                                         Click="BtnInstall_Click"/>
                             </StackPanel>
                         </Grid>
+
+                        <!-- Row 3, Col 0: FSR4 INT8 version selector (spans all cols) -->
+                        <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                                Padding="0,8,0,0"
+                                Margin="0,4,0,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="FSR4 INT8:"
+                                           Foreground="{StaticResource BrTextSecondary}"
+                                           VerticalAlignment="Center"
+                                           FontSize="{StaticResource FontSizeBody}"
+                                           Margin="0,0,8,0"/>
+                                <ComboBox Name="CmbExtrasVersion"
+                                          Width="170"
+                                          Classes="BtnSelector"
+                                          Padding="8,0,24,0"
+                                          HorizontalContentAlignment="Left"
+                                          VerticalContentAlignment="Center" />
+                                <Border Background="{StaticResource BrBgElevated}"
+                                        BorderBrush="{StaticResource BrBorderSubtle}"
+                                        BorderThickness="1" CornerRadius="8"
+                                        Width="16" Height="16"
+                                        Margin="10,0,0,0"
+                                        ToolTip.ShowDelay="100" Cursor="Help"
+                                        ToolTip.Tip="{DynamicResource TxtTooltipFsr4Int8}">
+                                    <TextBlock Text="?" Foreground="{StaticResource BrTextSecondary}"
+                                               FontSize="10" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Margin="0,-1,0,0"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Border>
             </Grid>
