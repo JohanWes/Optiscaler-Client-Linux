@@ -12,6 +12,7 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using OptiscalerClient.Models;
 using OptiscalerClient.Services;
+using OptiscalerClient.Helpers;
 
 namespace OptiscalerClient.Views;
 
@@ -521,7 +522,7 @@ public partial class BulkInstallWindow : Window
         {
             try
             {
-                var gpu = _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                var gpu = GpuSelectionHelper.GetPreferredGpu(_gpuService, _componentService.Config.DefaultGpuId);
                 // RDNA 4 = Radeon RX 9000 series (GPU name contains "RX 9" or similar)
                 isRdna4 = gpu != null && gpu.Vendor == GpuVendor.AMD &&
                           (gpu.Name.Contains(" 9", StringComparison.OrdinalIgnoreCase) ||

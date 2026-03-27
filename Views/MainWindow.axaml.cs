@@ -15,6 +15,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using System.IO;
 using System.Collections.Generic;
+using OptiscalerClient.Helpers;
 
 namespace OptiscalerClient.Views
 {
@@ -32,6 +33,9 @@ namespace OptiscalerClient.Views
         private bool _isInitializingLanguage = true;
         private DispatcherTimer? _scanDotTimer;
         private double _scanDotPhase = 0;
+        private readonly Dictionary<Button, DispatcherTimer> _quickInstallDotTimers = new();
+        private readonly Dictionary<Button, double> _quickInstallDotPhases = new();
+        private readonly Dictionary<Button, double> _quickInstallOriginalMinWidths = new();
 
         private readonly GameAnalyzerService _analyzerService = new();
         private GameMetadataService _metadataService = null!;
@@ -273,6 +277,8 @@ namespace OptiscalerClient.Views
                 }
                 _isInitializingLanguage = false;
             }
+
+            PopulateDefaultGpuComboBox();
         }
 
         private void CmbLanguage_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -342,6 +348,58 @@ namespace OptiscalerClient.Views
                 var ver = item.Tag?.ToString() ?? "none";
                 _componentService.Config.DefaultExtrasVersion = ver.Equals("none", StringComparison.OrdinalIgnoreCase) ? null : ver;
                 _componentService.SaveConfiguration();
+            }
+        }
+
+        private void PopulateDefaultGpuComboBox()
+        {
+            var cmb = this.FindControl<ComboBox>("CmbDefaultGpu");
+            if (cmb == null) return;
+
+            _isInitializingLanguage = true;
+            cmb.Items.Clear();
+
+            var autoItem = new ComboBoxItem { Content = "Auto (Recommended)", Tag = "auto" };
+            cmb.Items.Add(autoItem);
+
+            if (OperatingSystem.IsWindows() && _gpuService != null)
+            {
+                var gpus = _gpuService.DetectGPUs();
+                foreach (var gpu in gpus)
+                {
+                    var label = $"{gpu.Vendor} - {gpu.Name}";
+                    var id = GpuSelectionHelper.BuildGpuId(gpu);
+                    cmb.Items.Add(new ComboBoxItem { Content = label, Tag = id });
+                }
+            }
+
+            var saved = _componentService.Config.DefaultGpuId;
+            cmb.SelectedIndex = 0;
+            if (!string.IsNullOrEmpty(saved))
+            {
+                for (int i = 1; i < cmb.Items.Count; i++)
+                {
+                    if ((cmb.Items[i] as ComboBoxItem)?.Tag?.ToString() == saved)
+                    {
+                        cmb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            _isInitializingLanguage = false;
+        }
+
+        private void CmbDefaultGpu_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isInitializingLanguage) return;
+            if (sender is ComboBox cmb && cmb.SelectedItem is ComboBoxItem item)
+            {
+                var id = item.Tag?.ToString();
+                _componentService.Config.DefaultGpuId = (id == "auto") ? null : id;
+                _componentService.SaveConfiguration();
+                _lastDetectedGpu = null;
+                _ = LoadGpuInfoAsync();
             }
         }
 
@@ -813,6 +871,106 @@ namespace OptiscalerClient.Views
             }
         }
 
+        private void SetQuickInstallLoading(Button button)
+        {
+            if (!_quickInstallOriginalMinWidths.ContainsKey(button))
+            {
+                _quickInstallOriginalMinWidths[button] = button.MinWidth;
+            }
+
+            var minWidth = button.Bounds.Width;
+            if (minWidth <= 0) minWidth = 140;
+            button.MinWidth = Math.Max(button.MinWidth, minWidth);
+
+            var spinner = new ProgressBar
+            {
+                IsIndeterminate = true,
+                Width = 26,
+                Height = 6,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Background = Brushes.Transparent
+            };
+
+            var dot1 = new Ellipse { Width = 5, Height = 5, Fill = this.FindResource("BrAccent") as IBrush ?? Brushes.Purple, Margin = new Thickness(2, 0) };
+            var dot2 = new Ellipse { Width = 5, Height = 5, Fill = this.FindResource("BrAccent") as IBrush ?? Brushes.Purple, Margin = new Thickness(2, 0) };
+            var dot3 = new Ellipse { Width = 5, Height = 5, Fill = this.FindResource("BrAccent") as IBrush ?? Brushes.Purple, Margin = new Thickness(2, 0) };
+
+            var t1 = new Avalonia.Media.TranslateTransform();
+            var t2 = new Avalonia.Media.TranslateTransform();
+            var t3 = new Avalonia.Media.TranslateTransform();
+            dot1.RenderTransform = t1;
+            dot2.RenderTransform = t2;
+            dot3.RenderTransform = t3;
+
+            var dots = new StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+            dots.Children.Add(dot1);
+            dots.Children.Add(dot2);
+            dots.Children.Add(dot3);
+
+            var stack = new StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                Spacing = 8,
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+            };
+
+            stack.Children.Add(new TextBlock
+            {
+                Text = "✦",
+                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Foreground = this.FindResource("BrAccent") as IBrush ?? Brushes.Purple
+            });
+            stack.Children.Add(dots);
+
+            button.Content = stack;
+            button.IsEnabled = false;
+            button.Foreground = this.FindResource("BrTextSecondary") as IBrush ?? Brushes.Gray;
+
+            if (_quickInstallDotTimers.TryGetValue(button, out var existing))
+            {
+                existing.Stop();
+            }
+
+            _quickInstallDotPhases[button] = 0;
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+            timer.Tick += (s, e) =>
+            {
+                if (!_quickInstallDotPhases.ContainsKey(button)) return;
+                _quickInstallDotPhases[button] += 0.25;
+                var phase = _quickInstallDotPhases[button];
+                const double amplitude = 6;
+                const double phaseOffset = Math.PI * 2 / 3;
+                t1.Y = -amplitude * Math.Max(0, Math.Sin(phase));
+                t2.Y = -amplitude * Math.Max(0, Math.Sin(phase + phaseOffset));
+                t3.Y = -amplitude * Math.Max(0, Math.Sin(phase + phaseOffset * 2));
+            };
+            _quickInstallDotTimers[button] = timer;
+            timer.Start();
+        }
+
+        private void ClearQuickInstallLoading(Button button, Game game)
+        {
+            button.IsEnabled = true;
+            UpdateFastInstallButton(button, game);
+
+            if (_quickInstallDotTimers.TryGetValue(button, out var timer))
+            {
+                timer.Stop();
+                _quickInstallDotTimers.Remove(button);
+            }
+            _quickInstallDotPhases.Remove(button);
+
+            if (_quickInstallOriginalMinWidths.TryGetValue(button, out var originalMinWidth))
+            {
+                button.MinWidth = originalMinWidth;
+                _quickInstallOriginalMinWidths.Remove(button);
+            }
+        }
+
         private async void BtnFastInstall_Click(object? sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.DataContext is Game selectedGame)
@@ -868,39 +1026,42 @@ namespace OptiscalerClient.Views
                             ).ShowDialog<bool>(this);
                             return;
                         }
-                        
+
+                        if (ComponentManagementService.IsOptiScalerDownloadActive(versionToInstall))
+                        {
+                            ShowSecondaryToast($"Ya hay una descarga en curso para v{versionToInstall}.");
+                            return;
+                        }
+
                         // Get cache paths
                         var optiCacheDir = _componentService.GetOptiScalerCachePath(versionToInstall);
-                        
+
                         // Download OptiScaler if not in cache
                         if (!Directory.Exists(optiCacheDir) || Directory.GetFiles(optiCacheDir, "*.*", SearchOption.AllDirectories).Length == 0)
                         {
-                            // Show downloading dialog
-                            var downloadDialog = new ConfirmDialog(
-                                this,
-                                "Downloading OptiScaler",
-                                $"Downloading OptiScaler {versionToInstall}...\nPlease wait.",
-                                isAlert: true
-                            );
-                            
-                            // Start download in background
-                            var downloadTask = _componentService.DownloadOptiScalerAsync(versionToInstall);
-                            
-                            // Show dialog without blocking
-                            var dialogTask = downloadDialog.ShowDialog<bool>(this);
-                            
+                            SetQuickInstallLoading(button);
+                            ShowToast($"Descargando OptiScaler {versionToInstall}... 0%", showProgress: true, progressPercent: 0);
+
                             try
                             {
-                                // Wait for download to complete
-                                await downloadTask;
-                                
-                                // Close dialog after download completes
-                                downloadDialog.Close();
+                                var progress = new Progress<double>(p =>
+                                {
+                                    UpdateToastProgress($"Descargando OptiScaler {versionToInstall}... {(int)p}%", p);
+                                });
+
+                                await _componentService.DownloadOptiScalerAsync(versionToInstall, progress);
+                                ShowToast($"Instalando OptiScaler {versionToInstall}...", showProgress: true, progressPercent: null);
                             }
                             catch (Exception downloadEx)
                             {
-                                // Close downloading dialog
-                                downloadDialog.Close();
+                                if (downloadEx is VersionUnavailableException vex &&
+                                    vex.Message.Contains("Download already in progress", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    ShowSecondaryToast($"Ya hay una descarga en curso para v{vex.Version}.");
+                                    return;
+                                }
+
+                                HideToast();
                                 
                                 // Show error dialog
                                 await new ConfirmDialog(
@@ -918,16 +1079,20 @@ namespace OptiscalerClient.Views
                         
                         // Install with default settings (backup always enabled)
                         // Always install Fakenvapi and NukemFG by default
-                        installService.InstallOptiScaler(
-                            selectedGame,
-                            optiCacheDir,
-                            "dxgi.dll",
-                            installFakenvapi: true, // Always install Fakenvapi
-                            fakenvapiCachePath: fakeCacheDir,
-                            installNukemFG: true,  // Always install NukemFG
-                            nukemFGCachePath: nukemCacheDir,
-                            optiscalerVersion: versionToInstall
-                        );
+                        SetQuickInstallLoading(button);
+                        await Task.Run(() =>
+                        {
+                            installService.InstallOptiScaler(
+                                selectedGame,
+                                optiCacheDir,
+                                "dxgi.dll",
+                                installFakenvapi: true, // Always install Fakenvapi
+                                fakenvapiCachePath: fakeCacheDir,
+                                installNukemFG: true,  // Always install NukemFG
+                                nukemFGCachePath: nukemCacheDir,
+                                optiscalerVersion: versionToInstall
+                            );
+                        });
                         
                         // Update game status
                         selectedGame.IsOptiscalerInstalled = true;
@@ -941,6 +1106,7 @@ namespace OptiscalerClient.Views
                         }
                         
                         _persistenceService.SaveGames(_games);
+                        await HideToastAfterAsync(1200);
                     }
                 }
                 catch (Exception ex)
@@ -951,6 +1117,10 @@ namespace OptiscalerClient.Views
                         ex.Message,
                         isAlert: true
                     ).ShowDialog<bool>(this);
+                }
+                finally
+                {
+                    ClearQuickInstallLoading(button, selectedGame);
                 }
             }
         }
@@ -994,7 +1164,7 @@ namespace OptiscalerClient.Views
                         {
                             try
                             {
-                                return _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                                return GpuSelectionHelper.GetPreferredGpu(_gpuService, _componentService.Config.DefaultGpuId);
                             }
                             catch { return null; }
                         }
@@ -1081,6 +1251,72 @@ namespace OptiscalerClient.Views
         {
             _scanDotTimer?.Stop();
             _scanDotTimer = null;
+        }
+
+        private void ShowToast(string message, bool showProgress = false, double? progressPercent = null)
+        {
+            var txtToastMessage = this.FindControl<TextBlock>("TxtToastMessage");
+            var bdToast = this.FindControl<Border>("BdToast");
+            var prgToast = this.FindControl<ProgressBar>("PrgToast");
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (txtToastMessage != null) txtToastMessage.Text = message;
+                if (bdToast != null) bdToast.IsVisible = true;
+                if (prgToast != null)
+                {
+                    prgToast.IsVisible = showProgress;
+                    prgToast.IsIndeterminate = !progressPercent.HasValue;
+                    if (progressPercent.HasValue) prgToast.Value = progressPercent.Value;
+                }
+            });
+        }
+
+        private void UpdateToastProgress(string message, double progressPercent)
+        {
+            ShowToast(message, showProgress: true, progressPercent: progressPercent);
+        }
+
+        private void HideToast()
+        {
+            var bdToast = this.FindControl<Border>("BdToast");
+            var prgToast = this.FindControl<ProgressBar>("PrgToast");
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (bdToast != null) bdToast.IsVisible = false;
+                if (prgToast != null) prgToast.IsVisible = false;
+            });
+        }
+
+        private async Task HideToastAfterAsync(int delayMs)
+        {
+            await Task.Delay(delayMs);
+            HideToast();
+        }
+
+        private void ShowSecondaryToast(string message)
+        {
+            var txtToast = this.FindControl<TextBlock>("TxtToastSecondaryMessage");
+            var bdToast = this.FindControl<Border>("BdToastSecondary");
+
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (txtToast != null) txtToast.Text = message;
+                if (bdToast != null) bdToast.IsVisible = true;
+            });
+
+            _ = HideSecondaryToastAfterAsync(1500);
+        }
+
+        private async Task HideSecondaryToastAfterAsync(int delayMs)
+        {
+            await Task.Delay(delayMs);
+            var bdToast = this.FindControl<Border>("BdToastSecondary");
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (bdToast != null) bdToast.IsVisible = false;
+            });
         }
 
         #region Window State Persistence

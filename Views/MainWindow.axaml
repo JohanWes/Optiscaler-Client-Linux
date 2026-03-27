@@ -591,6 +591,36 @@
                          </Grid>
                      </Border>
 
+                     <!-- Default GPU -->
+                     <Border Background="{StaticResource BrBgCard}"
+                             BorderBrush="{StaticResource BrBorderSubtle}"
+                             BorderThickness="1"
+                             CornerRadius="{StaticResource RadiusLarge}"
+                             Padding="20,16"
+                             Margin="0,16,0,0">
+                         <Grid>
+                             <Grid.ColumnDefinitions>
+                                 <ColumnDefinition Width="*"/>
+                                 <ColumnDefinition Width="Auto"/>
+                             </Grid.ColumnDefinitions>
+                             <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                 <TextBlock Text="Default GPU"
+                                            FontWeight="SemiBold"
+                                            Foreground="{StaticResource BrTextPrimary}"/>
+                                 <TextBlock Text="Used for defaults and GPU-specific guidance."
+                                            Foreground="{StaticResource BrTextSecondary}"
+                                            TextWrapping="Wrap"
+                                            Margin="0,4,16,0"
+                                            FontSize="{StaticResource FontSizeCaption}"/>
+                             </StackPanel>
+                             <ComboBox Name="CmbDefaultGpu"
+                                       Grid.Column="1"
+                                       Width="240"
+                                       VerticalAlignment="Center"
+                                       SelectionChanged="CmbDefaultGpu_SelectionChanged"/>
+                         </Grid>
+                     </Border>
+
                      <!-- Auto Scan -->
                      <Border Background="{StaticResource BrBgCard}"
                              BorderBrush="{StaticResource BrBorderSubtle}"
@@ -841,6 +871,67 @@
                     </StackPanel>
                 </Border>
              </Grid>
+
+             <!-- TOAST NOTIFICATION -->
+             <Border Name="BdToast"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Bottom"
+                     Margin="0,0,0,24"
+                     Background="{StaticResource BrBgElevated}"
+                     BorderBrush="{StaticResource BrAccent}"
+                     BorderThickness="1"
+                     CornerRadius="{StaticResource RadiusMedium}"
+                     Padding="14,10"
+                     IsVisible="False"
+                     ZIndex="200">
+                 <StackPanel>
+                     <StackPanel Orientation="Horizontal">
+                         <TextBlock Name="TxtToastIcon"
+                                    Text="..."
+                                    Foreground="{StaticResource BrAccent}"
+                                    FontWeight="Bold"
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"/>
+                         <TextBlock Name="TxtToastMessage"
+                                    Text="Working..."
+                                    Foreground="{StaticResource BrTextPrimary}"
+                                    VerticalAlignment="Center"/>
+                     </StackPanel>
+                     <ProgressBar Name="PrgToast"
+                                  Height="6"
+                                  Width="240"
+                                  Margin="0,8,0,0"
+                                  IsVisible="False"
+                                  IsIndeterminate="True"
+                                  Minimum="0"
+                                  Maximum="100"/>
+                 </StackPanel>
+             </Border>
+
+             <!-- SECONDARY TOAST (non-blocking notice) -->
+             <Border Name="BdToastSecondary"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Bottom"
+                     Margin="0,0,0,100"
+                     Background="{StaticResource BrBgElevated}"
+                     BorderBrush="{StaticResource BrBorderSubtle}"
+                     BorderThickness="1"
+                     CornerRadius="{StaticResource RadiusMedium}"
+                     Padding="12,8"
+                     IsVisible="False"
+                     ZIndex="210">
+                 <StackPanel Orientation="Horizontal">
+                     <TextBlock Text="i"
+                                Foreground="{StaticResource BrTextSecondary}"
+                                FontWeight="Bold"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"/>
+                     <TextBlock Name="TxtToastSecondaryMessage"
+                                Text="Info"
+                                Foreground="{StaticResource BrTextPrimary}"
+                                VerticalAlignment="Center"/>
+                 </StackPanel>
+             </Border>
 
         </Grid>
     </Grid>

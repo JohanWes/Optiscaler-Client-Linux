@@ -259,7 +259,7 @@ namespace OptiscalerClient.Views
             {
                 try
                 {
-                    var gpu = _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                    var gpu = GpuSelectionHelper.GetPreferredGpu(_gpuService, componentService.Config.DefaultGpuId);
                     // RDNA 4 = Radeon RX 9000 series (GPU name contains "RX 9" or similar)
                     isRdna4 = gpu != null && gpu.Vendor == GpuVendor.AMD &&
                               (gpu.Name.Contains(" 9", StringComparison.OrdinalIgnoreCase) ||
@@ -473,6 +473,12 @@ namespace OptiscalerClient.Views
                     return;
                 }
 
+                if (ComponentManagementService.IsOptiScalerDownloadActive(optiscalerVersion))
+                {
+                    await ShowToastAsync($"Ya hay una descarga en curso para v{optiscalerVersion}.");
+                    return;
+                }
+
                 string? overrideGameDir = null;
                 if (isManualMode)
                 {
@@ -533,11 +539,18 @@ namespace OptiscalerClient.Views
                 {
                     isDownloadingOpti = false;
                     Dispatcher.UIThread.Post(() => { if (bdProgress != null) bdProgress.IsVisible = false; });
-                    var title = GetResourceString("TxtError", "Error");
-                    var msg = GetResourceString(
-                        "TxtVersionUnavailable",
-                        "Cannot install OptiScaler v{0} right now.\n\nCheck your internet connection and try again later.");
-                    await new ConfirmDialog(this, title, string.Format(msg, vex.Version)).ShowDialog<object>(this);
+                    if (vex.Message.Contains("Download already in progress", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await ShowToastAsync($"Ya hay una descarga en curso para v{vex.Version}.");
+                    }
+                    else
+                    {
+                        var title = GetResourceString("TxtError", "Error");
+                        var msg = GetResourceString(
+                            "TxtVersionUnavailable",
+                            "Cannot install OptiScaler v{0} right now.\n\nCheck your internet connection and try again later.");
+                        await new ConfirmDialog(this, title, string.Format(msg, vex.Version)).ShowDialog<object>(this);
+                    }
                     return;
                 }
                 catch (Exception ex)
@@ -918,10 +931,11 @@ namespace OptiscalerClient.Views
 
         private void ConfigureAdditionalComponents()
         {
+            var componentService = new ComponentManagementService();
             GpuInfo? gpu = null;
             if (OperatingSystem.IsWindows() && _gpuService != null)
             {
-                gpu = _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
+                gpu = GpuSelectionHelper.GetPreferredGpu(_gpuService, componentService.Config.DefaultGpuId);
             }
             var chkInstallFakenvapi = this.FindControl<CheckBox>("ChkInstallFakenvapi");
             var chkInstallNukemFG = this.FindControl<CheckBox>("ChkInstallNukemFG");
