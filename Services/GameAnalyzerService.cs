@@ -25,7 +25,28 @@ public class GameAnalyzerService
     };
     private static readonly string[] _xessNames = new[] { "libxess.dll" };
 
-    public void AnalyzeGame(Game game)
+    public static void InvalidateCacheForPath(string? installPath)
+    {
+        if (string.IsNullOrWhiteSpace(installPath))
+            return;
+
+        string normalized;
+        try
+        {
+            normalized = Path.GetFullPath(installPath);
+        }
+        catch
+        {
+            normalized = installPath;
+        }
+
+        lock (_cacheLock)
+        {
+            _analysisCache.Remove(normalized);
+        }
+    }
+
+    public void AnalyzeGame(Game game, bool forceRefresh = false)
     {
         if (string.IsNullOrEmpty(game.InstallPath) || !Directory.Exists(game.InstallPath))
             return;
@@ -44,7 +65,7 @@ public class GameAnalyzerService
             directoryWriteStamp = DateTime.MinValue;
         }
 
-        if (TryApplyCachedAnalysis(game, normalizedInstallPath, directoryWriteStamp))
+        if (!forceRefresh && TryApplyCachedAnalysis(game, normalizedInstallPath, directoryWriteStamp))
             return;
 
         // Reset current versions before analysis
@@ -58,6 +79,7 @@ public class GameAnalyzerService
         game.OptiscalerVersion = null; // Will be repopulated from manifest or log
 
         HashSet<string> ignoredFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var blockHeuristicFallbackDetection = false;
 
         try
         {
@@ -82,20 +104,64 @@ public class GameAnalyzerService
                         var manifest = System.Text.Json.JsonSerializer.Deserialize<Models.InstallationManifest>(manifestJson);
                         if (manifest != null)
                         {
-                            game.IsOptiscalerInstalled = true;
-                            if (!string.IsNullOrEmpty(manifest.OptiscalerVersion))
-                                game.OptiscalerVersion = manifest.OptiscalerVersion;
+                            // Only a committed manifest should be treated as a valid installation.
+                            var isCommitted = string.Equals(
+                                manifest.OperationStatus,
+                                "committed",
+                                StringComparison.OrdinalIgnoreCase);
 
-                            // Determine absolute game directory to construct absolute paths
+                            if (!isCommitted)
+                            {
+                                blockHeuristicFallbackDetection = true;
+                                try
+                                {
+                                    var installer = new GameInstallationService();
+                                    installer.RecoverIncompleteInstallIfNeeded(game.InstallPath);
+                                }
+                                catch
+                                {
+                                    // Ignore recovery errors here; we'll just avoid false positives
+                                    // from fallback detection for this analysis pass.
+                                }
+                            }
+
+                            // Determine absolute game directory to validate expected markers and ignored files.
                             string originDir = string.IsNullOrEmpty(manifest.InstalledGameDirectory)
                                 ? Path.GetDirectoryName(Path.GetDirectoryName(manifestFiles[0]))!
                                 : manifest.InstalledGameDirectory;
 
-                            if (!string.IsNullOrEmpty(originDir))
+                            var markersLookValid = true;
+                            if (isCommitted && !string.IsNullOrEmpty(originDir))
                             {
-                                foreach (var relFile in manifest.InstalledFiles)
+                                var markers = manifest.ExpectedFinalMarkers ?? new List<string>();
+                                if (markers.Count > 0)
                                 {
-                                    ignoredFiles.Add(Path.GetFullPath(Path.Combine(originDir, relFile)));
+                                    markersLookValid = markers.Any(rel =>
+                                    {
+                                        try
+                                        {
+                                            return File.Exists(Path.Combine(originDir, rel));
+                                        }
+                                        catch
+                                        {
+                                            return false;
+                                        }
+                                    });
+                                }
+                            }
+
+                            if (isCommitted && markersLookValid)
+                            {
+                                game.IsOptiscalerInstalled = true;
+                                if (!string.IsNullOrEmpty(manifest.OptiscalerVersion))
+                                    game.OptiscalerVersion = manifest.OptiscalerVersion;
+
+                                if (!string.IsNullOrEmpty(originDir))
+                                {
+                                    foreach (var relFile in manifest.InstalledFiles)
+                                    {
+                                        ignoredFiles.Add(Path.GetFullPath(Path.Combine(originDir, relFile)));
+                                    }
                                 }
                             }
                         }
@@ -104,7 +170,8 @@ public class GameAnalyzerService
                 }
 
                 // ── Priority 2: runtime log (overrides if it has richer version info) ──
-                if (!game.IsOptiscalerInstalled || string.IsNullOrEmpty(game.OptiscalerVersion))
+                if (!blockHeuristicFallbackDetection &&
+                    (!game.IsOptiscalerInstalled || string.IsNullOrEmpty(game.OptiscalerVersion)))
                 {
                     try
                     {
@@ -137,7 +204,7 @@ public class GameAnalyzerService
                 }
 
                 // ── Priority 3: OptiScaler.ini presence (no version — last resort) ──
-                if (!game.IsOptiscalerInstalled)
+                if (!blockHeuristicFallbackDetection && !game.IsOptiscalerInstalled)
                 {
                     var iniFiles = Directory.GetFiles(game.InstallPath, "OptiScaler.ini", options);
                     if (iniFiles.Length > 0)
