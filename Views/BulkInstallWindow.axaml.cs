@@ -183,16 +183,31 @@ public partial class BulkInstallWindow : Window
                 currentIndex++;
             }
 
-            // Add stable versions - first stable gets LATEST badge
+            var latestStable = _componentService.LatestStableVersion;
+
+            // Add stable versions
             bool isLatestStableMarked = false;
             foreach (var ver in stableVersions)
             {
-                bool isFirstStable = !isLatestStableMarked && !ver.Contains("nightly", StringComparison.OrdinalIgnoreCase);
-                bool shouldMarkAsLatest = isFirstStable;
+                bool shouldMarkAsLatest = false;
+                    
+                if (!string.IsNullOrEmpty(latestStable))
+                {
+                    shouldMarkAsLatest = ver.Equals(latestStable, StringComparison.OrdinalIgnoreCase);
+                }
+                else
+                {
+                    shouldMarkAsLatest = !isLatestStableMarked && !ver.Contains("nightly", StringComparison.OrdinalIgnoreCase);
+                }
 
-                if (isFirstStable)
+                if (shouldMarkAsLatest)
                 {
                     isLatestStableMarked = true;
+                    // If we didn't default to beta, default to this latest stable
+                    if (!hasBeta)
+                    {
+                        selectedIndex = currentIndex;
+                    }
                 }
 
                 cmbOptiVersion.Items.Add(BuildVersionItem(ver, isBeta: false, isLatest: shouldMarkAsLatest));

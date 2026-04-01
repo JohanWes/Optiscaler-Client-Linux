@@ -273,16 +273,24 @@ namespace OptiscalerClient.Views
                     currentIndex++;
                 }
 
-                // 2. Stable versions — first stable gets "LATEST" badge
+                var latestStable = componentService.LatestStableVersion;
+
+                // 2. Stable versions — mark latest stable based on GitHub's API
                 bool isLatestStableMarked = false;
                 foreach (var ver in stableVersions)
                 {
-                    bool isFirstStable = !isLatestStableMarked && !ver.Contains("nightly", StringComparison.OrdinalIgnoreCase);
+                    bool shouldMarkAsLatest = false;
+                    
+                    if (!string.IsNullOrEmpty(latestStable))
+                    {
+                        shouldMarkAsLatest = ver.Equals(latestStable, StringComparison.OrdinalIgnoreCase);
+                    }
+                    else
+                    {
+                        shouldMarkAsLatest = !isLatestStableMarked && !ver.Contains("nightly", StringComparison.OrdinalIgnoreCase);
+                    }
 
-                    // Mark as latest stable if this is the first stable version
-                    bool shouldMarkAsLatest = isFirstStable;
-
-                    if (isFirstStable)
+                    if (shouldMarkAsLatest)
                     {
                         isLatestStableMarked = true;
                     }
@@ -293,9 +301,9 @@ namespace OptiscalerClient.Views
                         // User prefers latest beta - select the latest beta (index 0)
                         selectedIndex = 0;
                     }
-                    else if (isFirstStable)
+                    else if (shouldMarkAsLatest)
                     {
-                        // User prefers stable - select the first stable version
+                        // User prefers stable - select the latest stable version
                         selectedIndex = currentIndex;
                     }
 

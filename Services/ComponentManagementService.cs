@@ -341,27 +341,51 @@ namespace OptiscalerClient.Services
 
             var all = _releasesCache.Releases;
 
+            Version parse(string v)
+            {
+                if (string.IsNullOrEmpty(v)) return new Version(0, 0);
+                var clean = new string(v.TakeWhile(c => char.IsDigit(c) || c == '.').ToArray()).TrimEnd('.');
+                if (!string.IsNullOrEmpty(clean) && Version.TryParse(clean, out var parsed)) return parsed;
+                return new Version(0, 0);
+            }
+
+            int parseSuffixValue(string v)
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(v, @"\d+$");
+                if (match.Success && int.TryParse(match.Value, out int val)) return val;
+                return 0;
+            }
+
+            var stablesList = all.Where(r => !r.IsBeta)
+                                 .OrderByDescending(r => parse(r.Version))
+                                 .ThenByDescending(r => parseSuffixValue(r.Version))
+                                 .ThenByDescending(r => r.Version, StringComparer.OrdinalIgnoreCase)
+                                 .ToList();
+
+            var betasList = all.Where(r => r.IsBeta)
+                               .OrderByDescending(r => parse(r.Version))
+                               .ThenByDescending(r => parseSuffixValue(r.Version))
+                               .ThenByDescending(r => r.Version, StringComparer.OrdinalIgnoreCase)
+                               .ToList();
+
             _cachedBetaVersions = new System.Collections.Generic.HashSet<string>(
-                all.Where(r => r.IsBeta).Select(r => r.Version),
-                StringComparer.OrdinalIgnoreCase);
+                betasList.Select(r => r.Version), StringComparer.OrdinalIgnoreCase);
 
             _cachedLatestBetaVersion = all.FirstOrDefault(r => r.IsLatestBeta)?.Version
-                ?? all.FirstOrDefault(r => r.IsBeta)?.Version;
+                ?? betasList.FirstOrDefault()?.Version;
 
             _cachedLatestStableVersion = all.FirstOrDefault(r => r.IsLatestStable)?.Version
-                ?? all.FirstOrDefault(r => !r.IsBeta)?.Version;
+                ?? stablesList.FirstOrDefault()?.Version;
 
-            // Stable versions first (latest stable at top), then betas
-            var stables = all.Where(r => !r.IsBeta).Select(r => r.Version).ToList();
-            var betas = all.Where(r => r.IsBeta).Select(r => r.Version).ToList();
+            // Stable versions first (highest to lowest), then betas (highest to lowest)
             var merged = new System.Collections.Generic.List<string>();
-            merged.AddRange(stables);
-            merged.AddRange(betas);
+            merged.AddRange(stablesList.Select(r => r.Version));
+            merged.AddRange(betasList.Select(r => r.Version));
 
             if (merged.Count > 0)
                 _cachedOptiScalerVersions = merged.Distinct().ToList();
 
-            DebugWindow.Log($"[ReleasesCache] Rebuilt in-memory cache: {stables.Count} stable + {betas.Count} beta versions");
+            DebugWindow.Log($"[ReleasesCache] Rebuilt in-memory cache: {stablesList.Count} stable + {betasList.Count} beta versions");
         }
 
         public async Task CheckForUpdatesAsync()
@@ -523,6 +547,28 @@ namespace OptiscalerClient.Services
                 DebugWindow.Log($"[FetchVersions] {repoLabel} → HTTP {(int)response.StatusCode}");
                 response.EnsureSuccessStatusCode();
 
+                string? actualLatestTag = null;
+                if (!isBeta)
+                {
+                    try
+                    {
+                        var latestUrl = $"https://api.github.com/repos/{config.RepoOwner}/{config.RepoName}/releases/latest";
+                        var latestResponse = await _httpClient.GetAsync(latestUrl);
+                        if (latestResponse.IsSuccessStatusCode)
+                        {
+                            var latestJson = await latestResponse.Content.ReadAsStringAsync();
+                            using var latestDoc = JsonDocument.Parse(latestJson);
+                            if (latestDoc.RootElement.TryGetProperty("tag_name", out var tag))
+                            {
+                                actualLatestTag = tag.GetString();
+                                if (actualLatestTag != null && actualLatestTag.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+                                    actualLatestTag = actualLatestTag.Substring(1);
+                            }
+                        }
+                    }
+                    catch { /* ignore, fallback to default behavior */ }
+                }
+
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 foreach (var element in doc.RootElement.EnumerateArray())
@@ -569,7 +615,15 @@ namespace OptiscalerClient.Services
                     }
                     else
                     {
-                        if (!latestStableMarked && !isPrerelease)
+                        if (!string.IsNullOrEmpty(actualLatestTag))
+                        {
+                            if (string.Equals(version, actualLatestTag, StringComparison.OrdinalIgnoreCase))
+                            {
+                                isThisLatestStable = true;
+                                latestStableMarked = true;
+                            }
+                        }
+                        else if (!latestStableMarked && !isPrerelease)
                         {
                             isThisLatestStable = true;
                             latestStableMarked = true;
