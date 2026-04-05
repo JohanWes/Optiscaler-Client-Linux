@@ -8,6 +8,8 @@ on:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -93,3 +95,14 @@ jobs:
         with:
           name: OptiscalerClient-linux-x64-publish
           path: artifacts/publish/linux-x64
+
+      - name: Publish prerelease asset
+        if: github.ref == 'refs/heads/pre-release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: linux-rc
+          name: Optiscaler Client Linux RC
+          prerelease: true
+          files: artifacts/publish/linux-x64/OptiscalerClient-linux-x64.AppImage
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
