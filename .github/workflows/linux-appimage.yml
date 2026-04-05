@@ -44,24 +44,20 @@ jobs:
         run: |
           cd artifacts/publish/linux-x64
           
-          mkdir -p optiscalerclient/data
-          mkdir -p optiscalerclient/opt/OptiscalerClient
+          app_root="$(mktemp -d)"
+          mkdir -p "$app_root/data"
+          mkdir -p "$app_root/opt/OptiscalerClient"
+          mkdir -p "$app_root/usr/share/applications"
+          mkdir -p "$app_root/usr/share/icons/hicolor/256x256/apps"
+          mkdir -p "$app_root/usr/share/metainfo"
+
+          find . -mindepth 1 -maxdepth 1 -exec cp -a {} "$app_root/opt/OptiscalerClient/" \;
+
+          cp "$GITHUB_WORKSPACE/packaging/linux/OptiscalerClient.desktop" "$app_root/usr/share/applications/"
           
-          cp OptiscalerClient optiscalerclient/opt/OptiscalerClient/
+          cp "$GITHUB_WORKSPACE/assets/icon.png" "$app_root/usr/share/icons/hicolor/256x256/apps/optiscalerclient.png"
           
-          mkdir -p optiscalerclient/usr/bin
-          echo '#!/bin/sh' > optiscalerclient/usr/bin/OptiscalerClient
-          echo 'exec /opt/OptiscalerClient/OptiscalerClient "$@"' >> optiscalerclient/usr/bin/OptiscalerClient
-          chmod +x optiscalerclient/usr/bin/OptiscalerClient
-          
-          mkdir -p optiscalerclient/usr/share/applications
-          cp "$GITHUB_WORKSPACE/packaging/linux/OptiscalerClient.desktop" optiscalerclient/usr/share/applications/
-          
-          mkdir -p optiscalerclient/usr/share/icons/hicolor/256x256/apps
-          cp "$GITHUB_WORKSPACE/assets/icon.png" optiscalerclient/usr/share/icons/hicolor/256x256/apps/optiscalerclient.png
-          
-          mkdir -p optiscalerclient/usr/share/metainfo
-          cat > optiscalerclient/usr/share/metainfo/com.optiscaler.client.appdata.xml << 'APPDATA'
+          cat > "$app_root/usr/share/metainfo/com.optiscaler.client.appdata.xml" << 'APPDATA'
           <?xml version="1.0" encoding="UTF-8"?>
           <component type="desktop-application">
             <id>com.optiscaler.client</id>
@@ -79,14 +75,25 @@ jobs:
           
           cat > OptiscalerClient-linux-x64.AppImage << 'BASH'
           #!/bin/bash
-          set -e
-          
-          APPDIR="$(cd "$(dirname "$0")" && pwd)"
+          set -euo pipefail
+
+          ARCHIVE_LINE="$(awk '/^__ARCHIVE_BELOW__$/ { print NR + 1; exit 0; }' "$0")"
+          TMPDIR="$(mktemp -d)"
+          cleanup() {
+            rm -rf "$TMPDIR"
+          }
+          trap cleanup EXIT
+
+          tail -n +"$ARCHIVE_LINE" "$0" | tar -xzf - -C "$TMPDIR"
+          APPDIR="$TMPDIR"
           export PATH="$APPDIR/usr/bin:$PATH"
-          export LD_LIBRARY_PATH="$APPDIR/usr/lib:$LD_LIBRARY_PATH"
-          export XDG_DATA_DIRS="$APPDIR/usr/share:$XDG_DATA_DIRS"
+          export LD_LIBRARY_PATH="$APPDIR/opt/OptiscalerClient${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          export XDG_DATA_DIRS="$APPDIR/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
           exec "$APPDIR/opt/OptiscalerClient/OptiscalerClient" "$@"
+          exit 0
+          __ARCHIVE_BELOW__
           BASH
+          tar -C "$app_root" -czf - . >> OptiscalerClient-linux-x64.AppImage
           chmod +x OptiscalerClient-linux-x64.AppImage
 
       - name: Upload AppImage
