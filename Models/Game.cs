@@ -3,12 +3,7 @@ namespace OptiscalerClient.Models;
 public enum GamePlatform
 {
     Steam,
-    Epic,
-    GOG,
-    Xbox,
-    EA,
-    BattleNet,
-    Ubisoft,
+    Heroic,
     Manual,
     Custom
 }
@@ -19,8 +14,9 @@ public class Game
     public string InstallPath { get; set; } = string.Empty;
     public GamePlatform Platform { get; set; }
     public bool IsManual => Platform == GamePlatform.Manual;
-    public string AppId { get; set; } = string.Empty; // Steam AppId or Epic ItemId
-    public string ExecutablePath { get; set; } = string.Empty; // Path to main .exe (if detectable)
+    public string AppId { get; set; } = string.Empty;
+    public string ExecutablePath { get; set; } = string.Empty;
+    public string? PrefixPath { get; set; }
 
     public string? CoverImageUrl { get; set; }
 
@@ -36,6 +32,14 @@ public class Game
 
     public string? XessVersion { get; set; }
     public string? XessPath { get; set; }
+
+    public bool HasDetectedUpscaler =>
+        !string.IsNullOrWhiteSpace(DlssVersion) ||
+        !string.IsNullOrWhiteSpace(FsrVersion) ||
+        !string.IsNullOrWhiteSpace(XessVersion);
+
+    public string? NoUpscalerWarningText =>
+        HasDetectedUpscaler ? null : "No upscaler detected. OptiScaler will most likely not work.";
 
     public bool IsOptiscalerInstalled { get; set; }
     public string? OptiscalerVersion { get; set; }

@@ -1,0 +1,95 @@
+name: linux-appimage
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Run integration tests
+        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/pre-release'
+        run: dotnet run --configuration Release --project tests/OptiscalerClient.IntegrationTests/OptiscalerClient.IntegrationTests.csproj
+
+      - name: Publish linux-x64
+        run: |
+          dotnet publish \
+            -c Release \
+            -r linux-x64 \
+            --self-contained true \
+            -o artifacts/publish/linux-x64
+
+      - name: Build AppImage
+        run: |
+          cd artifacts/publish/linux-x64
+          
+          mkdir -p optiscalerclient/data
+          mkdir -p optiscalerclient/opt/OptiscalerClient
+          
+          cp OptiscalerClient optiscalerclient/opt/OptiscalerClient/
+          
+          mkdir -p optiscalerclient/usr/bin
+          echo '#!/bin/sh' > optiscalerclient/usr/bin/OptiscalerClient
+          echo 'exec /opt/OptiscalerClient/OptiscalerClient "$@"' >> optiscalerclient/usr/bin/OptiscalerClient
+          chmod +x optiscalerclient/usr/bin/OptiscalerClient
+          
+          mkdir -p optiscalerclient/usr/share/applications
+          cp "$GITHUB_WORKSPACE/packaging/linux/OptiscalerClient.desktop" optiscalerclient/usr/share/applications/
+          
+          mkdir -p optiscalerclient/usr/share/icons/hicolor/256x256/apps
+          cp "$GITHUB_WORKSPACE/assets/icon.png" optiscalerclient/usr/share/icons/hicolor/256x256/apps/optiscalerclient.png
+          
+          mkdir -p optiscalerclient/usr/share/metainfo
+          cat > optiscalerclient/usr/share/metainfo/com.optiscaler.client.appdata.xml << 'APPDATA'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <component type="desktop-application">
+            <id>com.optiscaler.client</id>
+            <name>OptiScaler Client</name>
+            <summary>Manage FSR4 upscaling for games</summary>
+            <metadata_license>MIT</metadata_license>
+            <project_license>MIT</project_license>
+            <description>
+              <p>OptiScaler Client helps you install and manage FSR4 upscaling for Windows games running on Linux via Steam Proton or Heroic Games Launcher.</p>
+            </description>
+            <launchable type="desktop-id">OptiscalerClient.desktop</launchable>
+            <url type="homepage">https://github.com/JohanWes/Optiscaler-Client-Linux</url>
+          </component>
+          APPDATA
+          
+          cat > OptiscalerClient-linux-x64.AppImage << 'BASH'
+          #!/bin/bash
+          set -e
+          
+          APPDIR="$(cd "$(dirname "$0")" && pwd)"
+          export PATH="$APPDIR/usr/bin:$PATH"
+          export LD_LIBRARY_PATH="$APPDIR/usr/lib:$LD_LIBRARY_PATH"
+          export XDG_DATA_DIRS="$APPDIR/usr/share:$XDG_DATA_DIRS"
+          exec "$APPDIR/opt/OptiscalerClient/OptiscalerClient" "$@"
+          BASH
+          chmod +x OptiscalerClient-linux-x64.AppImage
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: OptiscalerClient-AppImage
+          path: artifacts/publish/linux-x64/OptiscalerClient-linux-x64.AppImage
+
+      - name: Upload raw publish folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: OptiscalerClient-linux-x64-publish
+          path: artifacts/publish/linux-x64

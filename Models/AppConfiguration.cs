@@ -13,16 +13,12 @@ namespace OptiscalerClient.Models
     }
 
     /// <summary>
-    /// Configuration for scan sources
+    /// Configuration for scan sources (Linux)
     /// </summary>
     public class ScanSourcesConfig
     {
         public bool ScanSteam { get; set; } = true;
-        public bool ScanEpic { get; set; } = true;
-        public bool ScanGOG { get; set; } = true;
-        public bool ScanXbox { get; set; } = true;
-        public bool ScanEA { get; set; } = true;
-        public bool ScanUbisoft { get; set; } = true;
+        public bool ScanHeroic { get; set; } = true;
         public List<string> CustomFolders { get; set; } = new();
     }
 

@@ -1,35 +1,27 @@
+using OptiscalerClient.Helpers;
 using OptiscalerClient.Models;
 using OptiscalerClient.Views;
 using System.IO;
-using System.Runtime.Versioning;
 
 namespace OptiscalerClient.Services;
 
-[SupportedOSPlatform("windows")]
 public class GameScannerService
 {
     private readonly IGameScanner _steamScanner;
-    private readonly IGameScanner _epicScanner;
-    private readonly IGameScanner _gogScanner;
-    private readonly IGameScanner _xboxScanner;
-    private readonly IGameScanner _eaScanner;
-    private readonly IGameScanner _battleNetScanner;
-    private readonly IGameScanner _ubisoftScanner;
+    private readonly IGameScanner _heroicScanner;
     private readonly ExclusionService _exclusions;
 
-    public GameScannerService()
+    public GameScannerService() : this(null, null, null)
     {
-        _steamScanner = new SteamScanner();
-        _epicScanner = new EpicScanner();
-        _gogScanner = new GogScanner();
-        _xboxScanner = new XboxScanner();
-        _eaScanner = new EaScanner();
-        _battleNetScanner = new BattleNetScanner();
-        _ubisoftScanner = new UbisoftScanner();
+    }
 
-        // config.json lives next to the executable (copied by the build)
-        var configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
-        _exclusions = new ExclusionService(configPath);
+    public GameScannerService(IGameScanner? steamScanner, IGameScanner? heroicScanner, string? configPath)
+    {
+        _steamScanner = steamScanner ?? new SteamScanner();
+        _heroicScanner = heroicScanner ?? new HeroicScanner();
+
+        var effectiveConfigPath = configPath ?? Path.Combine(AppContext.BaseDirectory, "config.json");
+        _exclusions = new ExclusionService(effectiveConfigPath);
     }
 
     public async Task<List<Game>> ScanAllGamesAsync(ScanSourcesConfig? scanConfig = null)
@@ -37,10 +29,10 @@ public class GameScannerService
         return await Task.Run(() =>
         {
             var games = new List<Game>();
+            var seenPaths = new HashSet<string>(StringComparer.Ordinal);
             var analyzer = new GameAnalyzerService();
-            DebugWindow.Log("[Scanner] Executing global game scan across all platforms...");
+            DebugWindow.Log("[Scanner] Executing Linux game scan...");
 
-            // Use default config if none provided
             if (scanConfig == null)
             {
                 scanConfig = new ScanSourcesConfig();
@@ -51,12 +43,20 @@ public class GameScannerService
                 foreach (var game in scannedGames)
                 {
                     if (_exclusions.IsExcluded(game)) continue;
+
+                    var normalizedPath = !string.IsNullOrEmpty(game.ExecutablePath)
+                        ? LinuxPathHelper.NormalizePath(game.ExecutablePath)
+                        : LinuxPathHelper.NormalizePath(game.InstallPath);
+
+                    if (string.IsNullOrEmpty(normalizedPath) || seenPaths.Contains(normalizedPath))
+                        continue;
+
+                    seenPaths.Add(normalizedPath);
                     analyzer.AnalyzeGame(game);
                     games.Add(game);
                 }
             }
 
-            // Scan platform sources based on config
             if (scanConfig.ScanSteam)
             {
                 try
@@ -67,65 +67,16 @@ public class GameScannerService
                 catch (Exception ex) { DebugWindow.Log($"[Scanner] Steam scan error: {ex.Message}"); }
             }
 
-            if (scanConfig.ScanEpic)
+            if (scanConfig.ScanHeroic)
             {
                 try
                 {
-                    DebugWindow.Log("[Scanner] Scanning Epic Games library...");
-                    ProcessGames(_epicScanner.Scan());
+                    DebugWindow.Log("[Scanner] Scanning Heroic library...");
+                    ProcessGames(_heroicScanner.Scan());
                 }
-                catch (Exception ex) { DebugWindow.Log($"[Scanner] Epic scan error: {ex.Message}"); }
+                catch (Exception ex) { DebugWindow.Log($"[Scanner] Heroic scan error: {ex.Message}"); }
             }
 
-            if (scanConfig.ScanGOG)
-            {
-                try
-                {
-                    DebugWindow.Log("[Scanner] Scanning GOG library...");
-                    ProcessGames(_gogScanner.Scan());
-                }
-                catch (Exception ex) { DebugWindow.Log($"[Scanner] GOG scan error: {ex.Message}"); }
-            }
-
-            if (scanConfig.ScanXbox)
-            {
-                try
-                {
-                    DebugWindow.Log("[Scanner] Scanning Xbox library (MS Store)...");
-                    ProcessGames(_xboxScanner.Scan());
-                }
-                catch (Exception ex) { DebugWindow.Log($"[Scanner] Xbox scan error: {ex.Message}"); }
-            }
-
-            if (scanConfig.ScanEA)
-            {
-                try
-                {
-                    DebugWindow.Log("[Scanner] Scanning EA App library...");
-                    ProcessGames(_eaScanner.Scan());
-                }
-                catch (Exception ex) { DebugWindow.Log($"[Scanner] EA scan error: {ex.Message}"); }
-            }
-
-            // Always scan Battle.net (no config switch yet)
-            try
-            {
-                DebugWindow.Log("[Scanner] Scanning Battle.net library...");
-                ProcessGames(_battleNetScanner.Scan());
-            }
-            catch (Exception ex) { DebugWindow.Log($"[Scanner] Battle.net scan error: {ex.Message}"); }
-
-            if (scanConfig.ScanUbisoft)
-            {
-                try
-                {
-                    DebugWindow.Log("[Scanner] Scanning Ubisoft Connect library...");
-                    ProcessGames(_ubisoftScanner.Scan());
-                }
-                catch (Exception ex) { DebugWindow.Log($"[Scanner] Ubisoft scan error: {ex.Message}"); }
-            }
-
-            // Scan custom folders
             if (scanConfig.CustomFolders != null && scanConfig.CustomFolders.Count > 0)
             {
                 DebugWindow.Log($"[Scanner] Scanning {scanConfig.CustomFolders.Count} custom folder(s)...");
@@ -162,24 +113,20 @@ public class GameScannerService
 
         try
         {
-            // Get all subdirectories (game folders)
             var gameFolders = Directory.GetDirectories(rootFolder);
 
             foreach (var gameFolder in gameFolders)
             {
                 try
                 {
-                    // Find all .exe files in this game folder (recursive, but limited depth)
                     var exeFiles = Directory.GetFiles(gameFolder, "*.exe", SearchOption.AllDirectories);
 
                     foreach (var exePath in exeFiles)
                     {
-                        // Use the game folder name as the game name
                         var gameName = Path.GetFileName(gameFolder);
-                        
-                        // Skip common non-game executables
+
                         var exeName = Path.GetFileNameWithoutExtension(exePath).ToLower();
-                        if (exeName.Contains("unins") || exeName.Contains("setup") || 
+                        if (exeName.Contains("unins") || exeName.Contains("setup") ||
                             exeName.Contains("installer") || exeName.Contains("crash") ||
                             exeName.Contains("launcher") && !exeName.Contains("game"))
                         {
@@ -190,15 +137,14 @@ public class GameScannerService
                         {
                             Name = gameName,
                             ExecutablePath = exePath,
-                            InstallPath = gameFolder,
+                            InstallPath = LinuxPathHelper.NormalizePath(gameFolder),
                             Platform = GamePlatform.Custom,
                             AppId = "Custom_" + Path.GetFileName(gameFolder)
                         };
 
                         games.Add(game);
                         DebugWindow.Log($"[Scanner] Found custom game: {gameName} ({Path.GetFileName(exePath)})");
-                        
-                        // Only take the first valid exe per game folder to avoid duplicates
+
                         break;
                     }
                 }

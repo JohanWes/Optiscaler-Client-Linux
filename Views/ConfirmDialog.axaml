@@ -49,17 +49,15 @@
                         <!-- Close button -->
                         <Button Grid.Column="1"
                                 Name="BtnCloseTop"
+                                Content="✕"
+                                ToolTip.Tip="{DynamicResource TxtClose}"
                                 Classes="BtnBase"
                                 Width="45" Height="45"
                                 Padding="0"
                                 Background="Transparent"
                                 BorderThickness="0"
                                 CornerRadius="0,12,0,0"
-                                Click="BtnCancel_Click">
-                            <TextBlock Text="&#xE711;"
-                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI"
-                                       FontSize="12"/>
-                        </Button>
+                                Click="BtnCancel_Click"/>
                     </Grid>
                 </Border>
 

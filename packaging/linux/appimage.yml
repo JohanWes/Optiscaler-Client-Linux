@@ -1,0 +1,32 @@
+version: 1
+
+AppImage:
+  bundleLang: en
+  arch: x86_64
+
+appInfo:
+  id: com.optiscaler.client
+  name: OptiScaler Client
+  icon: optiscalerclient
+  version: 1.0.3
+
+apt:
+  packages:
+    - libfontconfig1
+    - libfreetype6
+    - libssl3
+    - libx11-6
+    - libxcomposite1
+    - libxdamage1
+    - libxext6
+    - libxfixes3
+    - libxi6
+    - libxkbcommon-x11-0
+    - libxrandr2
+    - libxrender1
+    - libxtst6
+
+runtime:
+  env:
+    - APPDIR: /opt/OptiscalerClient
+    - LD_LIBRARY_PATH: "$APPDIR:$LD_LIBRARY_PATH"

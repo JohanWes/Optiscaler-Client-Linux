@@ -62,18 +62,10 @@ namespace OptiscalerClient.Views
             var config = _componentService.Config.ScanSources;
 
             var tglSteam = this.FindControl<ToggleSwitch>("TglSteam");
-            var tglEpic = this.FindControl<ToggleSwitch>("TglEpic");
-            var tglGOG = this.FindControl<ToggleSwitch>("TglGOG");
-            var tglXbox = this.FindControl<ToggleSwitch>("TglXbox");
-            var tglEA = this.FindControl<ToggleSwitch>("TglEA");
-            var tglUbisoft = this.FindControl<ToggleSwitch>("TglUbisoft");
+            var tglHeroic = this.FindControl<ToggleSwitch>("TglHeroic");
 
             if (tglSteam != null) tglSteam.IsChecked = config.ScanSteam;
-            if (tglEpic != null) tglEpic.IsChecked = config.ScanEpic;
-            if (tglGOG != null) tglGOG.IsChecked = config.ScanGOG;
-            if (tglXbox != null) tglXbox.IsChecked = config.ScanXbox;
-            if (tglEA != null) tglEA.IsChecked = config.ScanEA;
-            if (tglUbisoft != null) tglUbisoft.IsChecked = config.ScanUbisoft;
+            if (tglHeroic != null) tglHeroic.IsChecked = config.ScanHeroic;
 
             _customFolders.Clear();
             _customFolders.AddRange(config.CustomFolders);
@@ -180,18 +172,10 @@ namespace OptiscalerClient.Views
         private void BtnSave_Click(object? sender, RoutedEventArgs e)
         {
             var tglSteam = this.FindControl<ToggleSwitch>("TglSteam");
-            var tglEpic = this.FindControl<ToggleSwitch>("TglEpic");
-            var tglGOG = this.FindControl<ToggleSwitch>("TglGOG");
-            var tglXbox = this.FindControl<ToggleSwitch>("TglXbox");
-            var tglEA = this.FindControl<ToggleSwitch>("TglEA");
-            var tglUbisoft = this.FindControl<ToggleSwitch>("TglUbisoft");
+            var tglHeroic = this.FindControl<ToggleSwitch>("TglHeroic");
 
             _componentService.Config.ScanSources.ScanSteam = tglSteam?.IsChecked ?? true;
-            _componentService.Config.ScanSources.ScanEpic = tglEpic?.IsChecked ?? true;
-            _componentService.Config.ScanSources.ScanGOG = tglGOG?.IsChecked ?? true;
-            _componentService.Config.ScanSources.ScanXbox = tglXbox?.IsChecked ?? true;
-            _componentService.Config.ScanSources.ScanEA = tglEA?.IsChecked ?? true;
-            _componentService.Config.ScanSources.ScanUbisoft = tglUbisoft?.IsChecked ?? true;
+            _componentService.Config.ScanSources.ScanHeroic = tglHeroic?.IsChecked ?? true;
             _componentService.Config.ScanSources.CustomFolders = _customFolders.ToList();
 
             _componentService.SaveConfiguration();

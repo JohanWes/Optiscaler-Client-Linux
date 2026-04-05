@@ -60,14 +60,7 @@ namespace OptiscalerClient.Views
                 this.Position = new PixelPoint((int)Math.Max(0, x), (int)Math.Max(0, y));
             }
 
-            if (OperatingSystem.IsWindows())
-            {
-                _gpuService = new WindowsGpuDetectionService();
-            }
-            else
-            {
-                _gpuService = null!;
-            }
+            _gpuService = new LinuxGpuDetectionService();
 
             SetupUI();
             
@@ -255,7 +248,7 @@ namespace OptiscalerClient.Views
 
             // Determine default selection
             bool isRdna4 = false;
-            if (OperatingSystem.IsWindows() && _gpuService != null)
+            if (_gpuService != null)
             {
                 try
                 {
@@ -884,7 +877,8 @@ namespace OptiscalerClient.Views
                     }
                 }
 
-                if (File.Exists(System.IO.Path.Combine(_game.InstallPath, "nvapi64.dll")))
+                if (File.Exists(System.IO.Path.Combine(_game.InstallPath, "nvapi64.dll")) ||
+                    File.Exists(System.IO.Path.Combine(_game.InstallPath, "fakenvapi.dll")))
                     components.Add("Fakenvapi: installed");
 
                 if (File.Exists(System.IO.Path.Combine(_game.InstallPath, "dlssg_to_fsr3_amd_is_better.dll")))
@@ -919,7 +913,7 @@ namespace OptiscalerClient.Views
         private void ConfigureAdditionalComponents()
         {
             GpuInfo? gpu = null;
-            if (OperatingSystem.IsWindows() && _gpuService != null)
+            if (_gpuService != null)
             {
                 gpu = _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
             }

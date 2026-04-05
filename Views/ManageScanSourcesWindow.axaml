@@ -73,34 +73,10 @@
                                             <ToggleSwitch Grid.Column="1" Name="TglSteam" OnContent="" OffContent="" IsChecked="True"/>
                                         </Grid>
                                         
-                                        <!-- Epic Games -->
+                                        <!-- Heroic Games Launcher -->
                                         <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock Grid.Column="0" Text="Epic Games" VerticalAlignment="Center" Foreground="{StaticResource BrTextPrimary}"/>
-                                            <ToggleSwitch Grid.Column="1" Name="TglEpic" OnContent="" OffContent="" IsChecked="True"/>
-                                        </Grid>
-                                        
-                                        <!-- GOG Galaxy -->
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock Grid.Column="0" Text="GOG Galaxy" VerticalAlignment="Center" Foreground="{StaticResource BrTextPrimary}"/>
-                                            <ToggleSwitch Grid.Column="1" Name="TglGOG" OnContent="" OffContent="" IsChecked="True"/>
-                                        </Grid>
-                                        
-                                        <!-- Xbox (Microsoft Store) -->
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock Grid.Column="0" Text="Xbox (Microsoft Store)" VerticalAlignment="Center" Foreground="{StaticResource BrTextPrimary}"/>
-                                            <ToggleSwitch Grid.Column="1" Name="TglXbox" OnContent="" OffContent="" IsChecked="True"/>
-                                        </Grid>
-                                        
-                                        <!-- EA App -->
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock Grid.Column="0" Text="EA App" VerticalAlignment="Center" Foreground="{StaticResource BrTextPrimary}"/>
-                                            <ToggleSwitch Grid.Column="1" Name="TglEA" OnContent="" OffContent="" IsChecked="True"/>
-                                        </Grid>
-
-                                        <!-- Ubisoft Connect -->
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock Grid.Column="0" Text="Ubisoft Connect" VerticalAlignment="Center" Foreground="{StaticResource BrTextPrimary}"/>
-                                            <ToggleSwitch Grid.Column="1" Name="TglUbisoft" OnContent="" OffContent="" IsChecked="True"/>
+                                            <TextBlock Grid.Column="0" Text="Heroic" VerticalAlignment="Center" Foreground="{StaticResource BrTextPrimary}"/>
+                                            <ToggleSwitch Grid.Column="1" Name="TglHeroic" OnContent="" OffContent="" IsChecked="True"/>
                                         </Grid>
                                         
                                     </StackPanel>

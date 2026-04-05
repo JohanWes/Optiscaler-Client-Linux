@@ -15,6 +15,7 @@ using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using System.IO;
 using System.Collections.Generic;
+using OptiscalerClient.Helpers;
 
 namespace OptiscalerClient.Views
 {
@@ -52,26 +53,12 @@ namespace OptiscalerClient.Views
         public MainWindow()
         {
             InitializeComponent();
-            if (OperatingSystem.IsWindows())
-            {
-                _scannerService = new GameScannerService();
-            }
-            else
-            {
-                _scannerService = null!; // TODO: Implement Linux game scanner
-            }
+            _scannerService = new GameScannerService();
             _persistenceService = new GamePersistenceService();
             _componentService = new ComponentManagementService();
             _metadataService = new GameMetadataService(_componentService);
             App.ChangeLanguage(_componentService.Config.Language);
-            if (OperatingSystem.IsWindows())
-            {
-                _gpuService = new WindowsGpuDetectionService();
-            }
-            else
-            {
-                _gpuService = null!; // TODO: Implement Linux GPU detection
-            }
+            _gpuService = new LinuxGpuDetectionService();
             _games = new ObservableCollection<Game>();
 
             // Debug Window check
@@ -501,52 +488,11 @@ namespace OptiscalerClient.Views
 
             try
             {
-                // 1. Check for component updates (Fakenvapi, etc)
                 await _componentService.CheckForUpdatesAsync();
                 PopulateHelpContent();
 
-                // 2. Check for App Updates
-                var appUpdateService = new AppUpdateService(_componentService);
-                bool hasUpdate = await appUpdateService.CheckForAppUpdateAsync();
-
-                if (hasUpdate)
-                {
-                    var updateTitle = GetResourceString("TxtUpdateAvailableTitle", "Update Available");
-                    var updateMsgFormat = GetResourceString("TxtUpdateAvailableMsg", "A new version is available (v{0}). Download now?");
-                    var updateMsg = string.Format(updateMsgFormat, appUpdateService.LatestVersion);
-
-                    var dialog = new ConfirmDialog(this, updateTitle, updateMsg, false);
-                    if (await dialog.ShowDialog<bool>(this)) // true if confirmed
-                    {
-                        btnCheckUpdates.Content = GetResourceString("TxtUpdatingApp", "Updating...");
-                        
-                        await appUpdateService.DownloadAndPrepareUpdateAsync(new Progress<double>(p => {
-                            btnCheckUpdates.Content = $"{GetResourceString("TxtUpdatingApp", "Updating")} ({p:F0}%)";
-                        }));
-
-                        var readyTitle = GetResourceString("TxtUpdateReady", "Update Ready");
-                        var readyMsg = GetResourceString("TxtUpdateReadyMsg", "Update downloaded. Restarting...");
-                        
-                        await new ConfirmDialog(this, readyTitle, readyMsg).ShowDialog<object>(this);
-                        
-                        appUpdateService.FinalizeAndRestart();
-                        
-                        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
-                        {
-                            desktop.Shutdown();
-                        }
-                    }
-                }
-                else if (appUpdateService.IsError)
-                {
-                    var errorMsg = GetResourceString("TxtUpdateCheckError", "There was a problem checking for updates.");
-                    await new ConfirmDialog(this, GetResourceString("TxtUpdateError", "Error"), errorMsg).ShowDialog<object>(this);
-                }
-                else
-                {
-                    var noUpdateMsg = GetResourceString("TxtNoUpdateFound", "No new updates found.");
-                    await new ConfirmDialog(this, GetResourceString("TxtReady", "Updates"), noUpdateMsg).ShowDialog<object>(this);
-                }
+                var noUpdateMsg = GetResourceString("TxtNoUpdateFound", "Component updates checked.");
+                await new ConfirmDialog(this, GetResourceString("TxtReady", "Updates"), noUpdateMsg).ShowDialog<object>(this);
             }
             catch (Exception ex)
             {
@@ -583,7 +529,16 @@ namespace OptiscalerClient.Views
 
         private bool LoadSavedGames()
         {
-            var savedGames = _persistenceService.LoadGames();
+            var loadedGames = _persistenceService.LoadGames();
+            var savedGames = loadedGames
+                .Where(game => !SteamCompatibilityToolDetector.IsCompatibilityTool(game))
+                .ToList();
+
+            if (savedGames.Count != loadedGames.Count)
+            {
+                _persistenceService.SaveGames(savedGames);
+            }
+
             _allGames = savedGames;
             
             ApplyFilter(_txtSearch?.Text);
@@ -633,15 +588,7 @@ namespace OptiscalerClient.Views
 
             try
             {
-                List<Game> scanResults;
-                if (OperatingSystem.IsWindows() && _scannerService != null)
-                {
-                    scanResults = await _scannerService.ScanAllGamesAsync(_componentService.Config.ScanSources);
-                }
-                else
-                {
-                    scanResults = new List<Game>();
-                }
+                var scanResults = await _scannerService.ScanAllGamesAsync(_componentService.Config.ScanSources);
                 var manualGames = _games.Where(g => g.Platform == GamePlatform.Manual).ToList();
 
                 _games.Clear();
@@ -990,15 +937,11 @@ namespace OptiscalerClient.Views
                     _txtGpuInfo!.Text = GetResourceString("TxtDefaultGpu", "Detecting GPU...");
                     gpu = await Task.Run(() =>
                     {
-                        if (OperatingSystem.IsWindows() && _gpuService != null)
+                        try
                         {
-                            try
-                            {
-                                return _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
-                            }
-                            catch { return null; }
+                            return _gpuService.GetDiscreteGPU() ?? _gpuService.GetPrimaryGPU();
                         }
-                        return null;
+                        catch { return null; }
                     });
                     _lastDetectedGpu = gpu;
                 }

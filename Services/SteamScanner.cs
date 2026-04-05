@@ -1,141 +1,136 @@
-using Microsoft.Win32;
-using OptiscalerClient.Models;
-using OptiscalerClient.Views;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
+using OptiscalerClient.Helpers;
+using OptiscalerClient.Models;
 
 namespace OptiscalerClient.Services;
 
-[SupportedOSPlatform("windows")]
 public class SteamScanner : IGameScanner
 {
-    private const string REGISTRY_PATH = @"SOFTWARE\Valve\Steam";
+    private const string SteamRootDefault = ".local/share/Steam";
+    private const string SteamRootAlt1 = ".steam/root";
+    private const string SteamRootAlt2 = ".steam/steam";
+    private const string LibraryFoldersFile = "steamapps/libraryfolders.vdf";
+    private const string ManifestPattern = "appmanifest_*.acf";
+    private readonly string? _steamRootOverride;
+
+    public SteamScanner(string? steamRootOverride = null)
+    {
+        _steamRootOverride = steamRootOverride;
+    }
 
     public List<Game> Scan()
     {
         var games = new List<Game>();
-        var installPath = GetSteamInstallPath();
+        var steamRoot = FindSteamRoot();
 
-        if (string.IsNullOrEmpty(installPath))
+        if (string.IsNullOrEmpty(steamRoot))
             return games;
 
-        var libraryFolders = GetLibraryFolders(installPath);
-        
-        foreach (var libraryPath in libraryFolders)
-        {
-            try
-            {
-                var steamappsPath = Path.Combine(libraryPath, "steamapps");
-                DebugWindow.Log($"[Steam] Scanning library: {steamappsPath}");
-                if (!Directory.Exists(steamappsPath)) continue;
+        var libraryPaths = GetLibraryPaths(steamRoot);
 
-                var manifestFiles = Directory.GetFiles(steamappsPath, "appmanifest_*.acf");
-                foreach (var file in manifestFiles)
-                {
-                    var game = ParseManifest(file);
-                    if (game != null)
-                    {
-                        // Verify install path exists
-                        if (Directory.Exists(game.InstallPath))
-                        {
-                            games.Add(game);
-                        }
-                    }
-                }
+        foreach (var libraryPath in libraryPaths)
+        {
+            var steamappsPath = Path.Combine(libraryPath, "steamapps");
+            if (!Directory.Exists(steamappsPath))
+                continue;
+
+            foreach (var manifestPath in Directory.EnumerateFiles(steamappsPath, ManifestPattern))
+            {
+                var game = ParseManifest(manifestPath, libraryPath);
+                if (game != null)
+                    games.Add(game);
             }
-            catch { /* Ignore errors accessing folders */ }
         }
 
         return games;
     }
 
-    private string? GetSteamInstallPath()
+    private string? FindSteamRoot()
     {
-        try
+        if (!string.IsNullOrWhiteSpace(_steamRootOverride))
+            return _steamRootOverride;
+
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var possibleRoots = new[]
         {
-            // Try 32-bit registry view first (Steam is usually 32-bit app)
-            using var baseKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
-            using var key = baseKey.OpenSubKey(REGISTRY_PATH);
-            return key?.GetValue("InstallPath") as string;
-        }
-        catch 
+            Path.Combine(home, SteamRootDefault),
+            Path.Combine(home, SteamRootAlt1),
+            Path.Combine(home, SteamRootAlt2)
+        };
+
+        foreach (var root in possibleRoots)
         {
-            return null; 
+            if (Directory.Exists(root) && File.Exists(Path.Combine(root, "steamapps", "libraryfolders.vdf")))
+                return root;
         }
+
+        return null;
     }
 
-    private List<string> GetLibraryFolders(string steamPath)
+    private List<string> GetLibraryPaths(string steamRoot)
     {
-        var folders = new List<string> { steamPath }; // Default library is always the install path
-        var vdfPath = Path.Combine(steamPath, "steamapps", "libraryfolders.vdf");
+        var paths = new List<string> { steamRoot };
+        var libraryFoldersPath = Path.Combine(steamRoot, LibraryFoldersFile);
 
-        if (!File.Exists(vdfPath)) return folders;
+        if (!File.Exists(libraryFoldersPath))
+            return paths;
 
         try
         {
-            var content = File.ReadAllText(vdfPath);
-            // Regex to find "path" "C:\\..."
-            // VDF format uses "path" <tab/space> "value"
-            var matches = Regex.Matches(content, "\"path\"\\s+\"([^\"]+)\"");
-
+            var content = File.ReadAllText(libraryFoldersPath);
+            var matches = Regex.Matches(content, "\"path\"\\s*\"([^\"]+)\"");
             foreach (Match match in matches)
             {
-                if (match.Success && match.Groups.Count > 1)
-                {
-                    // Unescape backslashes (VDF escapes them as \\)
-                    var path = match.Groups[1].Value.Replace("\\\\", "\\");
-                    if (!folders.Contains(path, StringComparer.OrdinalIgnoreCase))
-                    {
-                        folders.Add(path);
-                    }
-                }
+                var path = match.Groups[1].Value;
+                if (!string.IsNullOrEmpty(path) && Directory.Exists(path))
+                    paths.Add(path);
             }
         }
-        catch { }
+        catch
+        {
+        }
 
-        return folders;
+        return paths;
     }
 
-    private Game? ParseManifest(string manifestPath)
+    private Game? ParseManifest(string manifestPath, string libraryPath)
     {
         try
         {
             var content = File.ReadAllText(manifestPath);
-            
-            // Extract AppID
-            var appIdMatch = Regex.Match(content, "\"appid\"\\s+\"(\\d+)\"");
-            var appId = appIdMatch.Success ? appIdMatch.Groups[1].Value : Path.GetFileName(manifestPath).Replace("appmanifest_", "").Replace(".acf", "");
 
-            // Extract Name
-            var nameMatch = Regex.Match(content, "\"name\"\\s+\"([^\"]+)\"");
-            var name = nameMatch.Success ? nameMatch.Groups[1].Value : "Unknown Game";
+            var appIdMatch = Regex.Match(content, "\"appid\"\\s*\"(\\d+)\"");
+            var nameMatch = Regex.Match(content, "\"name\"\\s*\"([^\"]+)\"");
+            var installDirMatch = Regex.Match(content, "\"installdir\"\\s*\"([^\"]+)\"");
 
-            // Extract InstallDir
-            var installDirMatch = Regex.Match(content, "\"installdir\"\\s+\"([^\"]+)\"");
-            if (!installDirMatch.Success) return null;
+            if (!appIdMatch.Success || !nameMatch.Success || !installDirMatch.Success)
+                return null;
 
-            var installDirName = installDirMatch.Groups[1].Value;
-            var libraryPath = Path.GetDirectoryName(Path.GetDirectoryName(manifestPath)); // Go up from steamapps/appmanifest_... to library root?
-            // Actually manifest is in steamapps, game is in steamapps/common/
-            
-            // The libraryPath in GetLibraryFolders returns the root (e.g. C:\Steam).
-            // manifestPath is C:\Steam\steamapps\appmanifest_123.acf
-            // Game path is C:\Steam\steamapps\common\GameName
-            
-            var steamappsPath = Path.GetDirectoryName(manifestPath); // ...\steamapps
-            if (steamappsPath == null) return null;
+            var appId = appIdMatch.Groups[1].Value;
+            var name = nameMatch.Groups[1].Value;
+            var installDir = installDirMatch.Groups[1].Value;
 
-            var commonPath = Path.Combine(steamappsPath, "common");
-            var fullInstallPath = Path.Combine(commonPath, installDirName);
+            if (SteamCompatibilityToolDetector.IsCompatibilityTool(name, installDir))
+                return null;
+
+            var installPath = Path.Combine(libraryPath, "steamapps", "common", installDir);
+            var prefixPath = Path.Combine(libraryPath, "steamapps", "compatdata", appId, "pfx");
+
+            if (!Directory.Exists(installPath) || !Directory.Exists(prefixPath))
+                return null;
+
+            var executablePath = GameExecutableLocator.FindBestExecutable(installPath, name);
 
             return new Game
             {
                 AppId = appId,
                 Name = name,
-                InstallPath = fullInstallPath,
+                InstallPath = LinuxPathHelper.NormalizePath(installPath),
+                ExecutablePath = executablePath ?? string.Empty,
+                PrefixPath = LinuxPathHelper.NormalizePath(prefixPath),
                 Platform = GamePlatform.Steam
             };
         }

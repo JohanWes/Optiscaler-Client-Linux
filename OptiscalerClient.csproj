@@ -12,16 +12,17 @@
 
     <!-- Build Optimizations -->
     <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
     <PublishTrimmed>false</PublishTrimmed> <!-- Disabled globally to fix NETSDK1168 (WPF limitation) -->
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <PublishReadyToRun>true</PublishReadyToRun>
     <DebugType>none</DebugType>
     <DebugSymbols>false</DebugSymbols>
     <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+    <NoWarn>$(NoWarn);NU1900</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
     <None Update="config.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -36,6 +37,5 @@
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.12" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.12" />
     <PackageReference Include="SharpCompress" Version="0.44.5" />
-    <PackageReference Include="System.Management" Version="10.0.0" />
   </ItemGroup>
 </Project>

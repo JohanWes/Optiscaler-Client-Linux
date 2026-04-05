@@ -101,25 +101,7 @@ namespace OptiscalerClient.Services
             DebugWindow.Log($"[Install] Installing main DLL as: {injectionDllName}");
 
             // Backup existing file if it exists
-            if (File.Exists(injectionDllPath))
-            {
-                var backupPath = Path.Combine(backupDir, injectionDllName);
-                var backupSubDir = Path.GetDirectoryName(backupPath);
-                if (backupSubDir != null && !Directory.Exists(backupSubDir))
-                    Directory.CreateDirectory(backupSubDir);
-
-                if (!File.Exists(backupPath))
-                {
-                    File.Copy(injectionDllPath, backupPath);
-                    manifest.BackedUpFiles.Add(injectionDllName);
-                    DebugWindow.Log($"[Install] Backed up existing file: {injectionDllName}");
-                }
-            }
-
-            // Copy OptiScaler.dll as the injection DLL
-            File.Copy(optiscalerMainDll, injectionDllPath, true);
-            manifest.InstalledFiles.Add(injectionDllName);
-            DebugWindow.Log($"[Install] Installed main OptiScaler DLL");
+            InstallTrackedFile(optiscalerMainDll, gameDir, backupDir, manifest, injectionDllName, $"[Install] Installed main DLL as: {injectionDllName}");
 
             // Step 2: Copy all other files (configs, dependencies, etc.)
             DebugWindow.Log($"[Install] Copying additional files...");
@@ -154,28 +136,36 @@ namespace OptiscalerClient.Services
                     }
                 }
 
-                // Backup existing file if needed
-                if (File.Exists(destPath))
-                {
-                    var backupPath = Path.Combine(backupDir, relativePath);
-                    var backupSubDir = Path.GetDirectoryName(backupPath);
-                    if (backupSubDir != null && !Directory.Exists(backupSubDir))
-                        Directory.CreateDirectory(backupSubDir);
-
-                    if (!File.Exists(backupPath))
-                    {
-                        File.Copy(destPath, backupPath);
-                        manifest.BackedUpFiles.Add(relativePath);
-                        DebugWindow.Log($"[Install] Backed up existing file: {relativePath}");
-                    }
-                }
-
-                File.Copy(sourcePath, destPath, true);
-                manifest.InstalledFiles.Add(relativePath);
+                InstallTrackedFile(sourcePath, gameDir, backupDir, manifest, relativePath, $"[Install] Installed file: {relativePath}");
                 additionalFileCount++;
+
+                // Current OptiScaler packages ship Fakenvapi as fakenvapi.dll, but the default
+                // NvApi loader path still looks for nvapi64.dll unless configured otherwise.
+                if (fileName.Equals("fakenvapi.dll", StringComparison.OrdinalIgnoreCase))
+                {
+                    var relativeDir = Path.GetDirectoryName(relativePath);
+                    var nvapiRelativePath = string.IsNullOrEmpty(relativeDir)
+                        ? "nvapi64.dll"
+                        : Path.Combine(relativeDir, "nvapi64.dll");
+
+                    InstallTrackedFile(sourcePath, gameDir, backupDir, manifest, nvapiRelativePath, $"[Install] Installed Fakenvapi alias: {nvapiRelativePath}");
+                    additionalFileCount++;
+                }
             }
 
             DebugWindow.Log($"[Install] Copied {additionalFileCount} additional files");
+
+            var packageIncludesFakenvapi = manifest.InstalledFiles.Any(f =>
+                f.Equals("nvapi64.dll", StringComparison.OrdinalIgnoreCase) ||
+                f.Equals("fakenvapi.dll", StringComparison.OrdinalIgnoreCase));
+
+            if (packageIncludesFakenvapi)
+            {
+                // Current OptiScaler prereleases can bundle Fakenvapi directly. Dead Space is one of the
+                // titles where forcing the local nvapi DLL is needed if auto-detection doesn't kick in.
+                ModifyIniValue(gameDir, "NvApi", "OverrideNvapiDll", "true");
+                DebugWindow.Log("[Install] Enabled OverrideNvapiDll in OptiScaler.ini");
+            }
 
             // Step 3: Install Fakenvapi if requested (AMD/Intel only)
             if (installFakenvapi && !string.IsNullOrEmpty(fakenvapiCachePath) && Directory.Exists(fakenvapiCachePath))
@@ -188,28 +178,25 @@ namespace OptiscalerClient.Services
                 {
                     var fileName = Path.GetFileName(sourcePath);
 
-                    // Only copy nvapi64.dll and fakenvapi.ini
-                    if (fileName.Equals("nvapi64.dll", StringComparison.OrdinalIgnoreCase) ||
-                        fileName.Equals("fakenvapi.ini", StringComparison.OrdinalIgnoreCase))
+                    if (fileName.Equals("fakenvapi.ini", StringComparison.OrdinalIgnoreCase))
                     {
-                        var destPath = Path.Combine(gameDir, fileName);
-
-                        // Backup if exists
-                        if (File.Exists(destPath))
-                        {
-                            var backupPath = Path.Combine(backupDir, fileName);
-                            if (!File.Exists(backupPath))
-                            {
-                                File.Copy(destPath, backupPath);
-                                manifest.BackedUpFiles.Add(fileName);
-                                DebugWindow.Log($"[Install] Backed up existing Fakenvapi file: {fileName}");
-                            }
-                        }
-
-                        File.Copy(sourcePath, destPath, true);
-                        manifest.InstalledFiles.Add(fileName);
+                        InstallTrackedFile(sourcePath, gameDir, backupDir, manifest, fileName, $"[Install] Installed Fakenvapi file: {fileName}");
                         fakeFileCount++;
-                        DebugWindow.Log($"[Install] Installed Fakenvapi file: {fileName}");
+                        continue;
+                    }
+
+                    if (fileName.Equals("nvapi64.dll", StringComparison.OrdinalIgnoreCase))
+                    {
+                        InstallTrackedFile(sourcePath, gameDir, backupDir, manifest, "nvapi64.dll", "[Install] Installed Fakenvapi file: nvapi64.dll");
+                        fakeFileCount++;
+                        continue;
+                    }
+
+                    if (fileName.Equals("fakenvapi.dll", StringComparison.OrdinalIgnoreCase))
+                    {
+                        InstallTrackedFile(sourcePath, gameDir, backupDir, manifest, "fakenvapi.dll", "[Install] Installed Fakenvapi file: fakenvapi.dll");
+                        InstallTrackedFile(sourcePath, gameDir, backupDir, manifest, "nvapi64.dll", "[Install] Installed Fakenvapi alias: nvapi64.dll");
+                        fakeFileCount += 2;
                     }
                 }
                 
@@ -454,7 +441,7 @@ namespace OptiscalerClient.Services
                     "version.dll", "wininet.dll", "winhttp.dll",
                     "nvngx.dll", "libxess.dll", "amdxcffx64.dll",
                     // Fakenvapi
-                    "nvapi64.dll", "fakenvapi.ini",
+                    "nvapi64.dll", "fakenvapi.dll", "fakenvapi.ini",
                     // NukemFG
                     "dlssg_to_fsr3_amd_is_better.dll",
                     // FSR 4 INT8 mod
@@ -505,146 +492,131 @@ namespace OptiscalerClient.Services
         /// </summary>
         public string? DetermineInstallDirectory(Game game)
         {
-            if (string.IsNullOrEmpty(game.InstallPath) || !Directory.Exists(game.InstallPath))
+            if (!string.IsNullOrEmpty(game.ExecutablePath) && File.Exists(game.ExecutablePath))
             {
-                // If InstallPath is missing, try ExecutablePath
-                if (!string.IsNullOrEmpty(game.ExecutablePath) && File.Exists(game.ExecutablePath))
-                    return Path.GetDirectoryName(game.ExecutablePath);
-
-                return null;
+                return Path.GetDirectoryName(game.ExecutablePath);
             }
 
-            // Rule 2: If Phoenix folder is present, ignore step 1 and search inside Phoenix/Binaries/Win64
-            var phoenixPath = Path.Combine(game.InstallPath, "Phoenix", "Binaries", "Win64");
-            if (Directory.Exists(phoenixPath))
+            if (!string.IsNullOrEmpty(game.InstallPath) && Directory.Exists(game.InstallPath))
             {
-                var phoenixExes = Directory.GetFiles(phoenixPath, "*.exe", SearchOption.TopDirectoryOnly);
-                if (phoenixExes.Length > 0)
+                var phoenixPath = Path.Combine(game.InstallPath, "Phoenix", "Binaries", "Win64");
+                if (Directory.Exists(phoenixPath))
                 {
-                    return phoenixPath;
+                    var phoenixExes = Directory.GetFiles(phoenixPath, "*.exe", SearchOption.TopDirectoryOnly);
+                    if (phoenixExes.Length > 0)
+                    {
+                        return phoenixPath;
+                    }
                 }
-            }
 
-            // Rule 1: Try to extract in the same folder as the main .exe, scan to find it.
-            string[] allExes = Array.Empty<string>();
-            try
-            {
-                allExes = Directory.GetFiles(game.InstallPath, "*.exe", SearchOption.AllDirectories);
-            }
-            catch { }
-
-            string? bestMatchDir = null;
-
-            if (allExes.Length > 0)
-            {
-                // Try to match by name or context
-                int bestScore = -1;
-                string? bestExe = null;
-
-                var gameNameLetters = new string(game.Name.Where(char.IsLetterOrDigit).ToArray());
-
-                foreach (var exePath in allExes)
+                string[] allExes;
+                try
                 {
-                    var fileName = Path.GetFileNameWithoutExtension(exePath);
+                    allExes = Directory.GetFiles(game.InstallPath, "*.exe", SearchOption.AllDirectories);
+                }
+                catch
+                {
+                    allExes = Array.Empty<string>();
+                }
 
-                    // Filter out known non-game executables
-                    if (fileName.Contains("Crash", StringComparison.OrdinalIgnoreCase) ||
-                        fileName.Contains("Redist", StringComparison.OrdinalIgnoreCase) ||
-                        fileName.Contains("Setup", StringComparison.OrdinalIgnoreCase) ||
-                        fileName.Contains("Launcher", StringComparison.OrdinalIgnoreCase) ||
-                        fileName.Contains("UnrealCEFSubProcess", StringComparison.OrdinalIgnoreCase) ||
-                        fileName.Contains("Prerequisites", StringComparison.OrdinalIgnoreCase))
-                        continue;
+                string? bestMatchDir = null;
 
-                    int score = 0;
-                    var exeLetters = new string(fileName.Where(char.IsLetterOrDigit).ToArray());
+                if (allExes.Length > 0)
+                {
+                    int bestScore = -1;
+                    string? bestExe = null;
+                    var gameNameLetters = new string(game.Name.Where(char.IsLetterOrDigit).ToArray());
 
-                    if (!string.IsNullOrEmpty(exeLetters) && !string.IsNullOrEmpty(gameNameLetters))
+                    foreach (var exePath in allExes)
                     {
-                        if (exeLetters.Contains(gameNameLetters, StringComparison.OrdinalIgnoreCase) ||
-                            gameNameLetters.Contains(exeLetters, StringComparison.OrdinalIgnoreCase))
+                        var fileName = Path.GetFileNameWithoutExtension(exePath);
+
+                        if (fileName.Contains("Crash", StringComparison.OrdinalIgnoreCase) ||
+                            fileName.Contains("Redist", StringComparison.OrdinalIgnoreCase) ||
+                            fileName.Contains("Setup", StringComparison.OrdinalIgnoreCase) ||
+                            fileName.Contains("Launcher", StringComparison.OrdinalIgnoreCase) ||
+                            fileName.Contains("UnrealCEFSubProcess", StringComparison.OrdinalIgnoreCase) ||
+                            fileName.Contains("Prerequisites", StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        int score = 0;
+                        var exeLetters = new string(fileName.Where(char.IsLetterOrDigit).ToArray());
+
+                        if (!string.IsNullOrEmpty(exeLetters) && !string.IsNullOrEmpty(gameNameLetters))
                         {
-                            score += 15;
+                            if (exeLetters.Contains(gameNameLetters, StringComparison.OrdinalIgnoreCase) ||
+                                gameNameLetters.Contains(exeLetters, StringComparison.OrdinalIgnoreCase))
+                            {
+                                score += 15;
+                            }
                         }
-                    }
 
-                    if (exePath.Contains(@"Binaries\Win64", StringComparison.OrdinalIgnoreCase))
-                    {
-                        score += 5;
-                    }
-
-                    try
-                    {
-                        // Main game executables are usually decently sized (> 5MB)
-                        var fileInfo = new FileInfo(exePath);
-                        if (fileInfo.Length > 5 * 1024 * 1024)
+                        var normalizedExePath = exePath.Replace('\\', '/');
+                        if (normalizedExePath.Contains("/Binaries/Win64/", StringComparison.OrdinalIgnoreCase))
                         {
-                            score += 10;
+                            score += 5;
                         }
-                    }
-                    catch { }
 
-                    var exeDir = Path.GetDirectoryName(exePath);
-                    if (exeDir != null)
-                    {
                         try
                         {
-                            var dlls = Directory.GetFiles(exeDir, "*.dll", SearchOption.TopDirectoryOnly);
-                            foreach (var dll in dlls)
+                            var fileInfo = new FileInfo(exePath);
+                            if (fileInfo.Length > 5 * 1024 * 1024)
                             {
-                                var dllName = Path.GetFileName(dll).ToLowerInvariant();
-                                if (dllName.Contains("amd") || dllName.Contains("fsr") || dllName.Contains("nvngx") || dllName.Contains("dlss") || dllName.Contains("sl.interposer") || dllName.Contains("xess"))
-                                {
-                                    score += 25; // High confidence if scaling DLLs are nearby
-                                    break;
-                                }
+                                score += 10;
                             }
                         }
                         catch { }
+
+                        var exeDir = Path.GetDirectoryName(exePath);
+                        if (exeDir != null)
+                        {
+                            try
+                            {
+                                var dlls = Directory.GetFiles(exeDir, "*.dll", SearchOption.TopDirectoryOnly);
+                                foreach (var dll in dlls)
+                                {
+                                    var dllName = Path.GetFileName(dll).ToLowerInvariant();
+                                    if (dllName.Contains("amd") || dllName.Contains("fsr") || dllName.Contains("nvngx") || dllName.Contains("dlss") || dllName.Contains("sl.interposer") || dllName.Contains("xess"))
+                                    {
+                                        score += 25;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+
+                        if (score > bestScore)
+                        {
+                            bestScore = score;
+                            bestExe = exePath;
+                        }
                     }
 
-                    if (score > bestScore)
+                    if (bestExe != null)
                     {
-                        bestScore = score;
-                        bestExe = exePath;
+                        bestMatchDir = Path.GetDirectoryName(bestExe);
                     }
-                }
 
-                if (bestExe != null)
-                {
-                    bestMatchDir = Path.GetDirectoryName(bestExe);
-                }
-
-                // Fallback: If no match by name, check known ExecutablePath
-                if (bestMatchDir == null)
-                {
-                    if (!string.IsNullOrEmpty(game.ExecutablePath) && File.Exists(game.ExecutablePath))
+                    if (bestMatchDir == null)
                     {
-                        bestMatchDir = Path.GetDirectoryName(game.ExecutablePath);
-                    }
-                    else
-                    {
-                        var binariesExes = allExes.Where(x => x.Contains(@"Binaries\Win64", StringComparison.OrdinalIgnoreCase)).ToList();
+                        var binariesExes = allExes.Where(x => x.Replace('\\', '/').Contains("/Binaries/Win64/", StringComparison.OrdinalIgnoreCase)).ToList();
                         if (binariesExes.Count == 1)
                         {
                             bestMatchDir = Path.GetDirectoryName(binariesExes[0]);
                         }
                     }
                 }
-            }
-            else if (allExes.Length == 0 && !string.IsNullOrEmpty(game.ExecutablePath) && File.Exists(game.ExecutablePath))
-            {
-                // Fallback if Directory.GetFiles fails but we have an ExecutablePath
-                bestMatchDir = Path.GetDirectoryName(game.ExecutablePath);
+
+                if (bestMatchDir != null && Directory.Exists(bestMatchDir))
+                {
+                    return bestMatchDir;
+                }
+
+                return game.InstallPath;
             }
 
-            if (bestMatchDir != null && Directory.Exists(bestMatchDir))
-            {
-                return bestMatchDir;
-            }
-
-            // Fallback to the main install path, if nothing else works
-            return game.InstallPath;
+            return null;
         }
 
 
@@ -653,21 +625,18 @@ namespace OptiscalerClient.Services
         /// </summary>
         private string DetectCorrectInstallDirectory(string baseDir)
         {
-            // Check for UE5 Phoenix structure: Phoenix/Binaries/Win64
             var phoenixPath = Path.Combine(baseDir, "Phoenix", "Binaries", "Win64");
             if (Directory.Exists(phoenixPath))
             {
                 return phoenixPath;
             }
 
-            // Check for generic UE structure: GameName/Binaries/Win64
             var binariesPath = Path.Combine(baseDir, "Binaries", "Win64");
             if (Directory.Exists(binariesPath))
             {
                 return binariesPath;
             }
 
-            // Return original path if no special structure detected
             return baseDir;
         }
 
@@ -746,6 +715,109 @@ namespace OptiscalerClient.Services
                 // If modification fails, try to create a new file
                 File.WriteAllText(iniPath, $"[General]\n{key}={value}\n");
             }
+        }
+
+        private void ModifyIniValue(string gameDir, string section, string key, string value)
+        {
+            var iniPath = Path.Combine(gameDir, "OptiScaler.ini");
+
+            if (!File.Exists(iniPath))
+            {
+                File.WriteAllText(iniPath, $"[{section}]\n{key}={value}\n");
+                return;
+            }
+
+            try
+            {
+                var lines = File.ReadAllLines(iniPath).ToList();
+                var sectionHeader = $"[{section}]";
+                var keyPrefix = $"{key}=";
+                var inTargetSection = false;
+                var keyFound = false;
+
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    var line = lines[i].Trim();
+
+                    if (line.Equals(sectionHeader, StringComparison.OrdinalIgnoreCase))
+                    {
+                        inTargetSection = true;
+                        continue;
+                    }
+
+                    if (line.StartsWith("[") && line.EndsWith("]"))
+                    {
+                        if (inTargetSection && !keyFound)
+                        {
+                            lines.Insert(i, $"{key}={value}");
+                            keyFound = true;
+                            break;
+                        }
+
+                        inTargetSection = false;
+                    }
+
+                    if (inTargetSection && line.StartsWith(keyPrefix, StringComparison.OrdinalIgnoreCase))
+                    {
+                        lines[i] = $"{key}={value}";
+                        keyFound = true;
+                        break;
+                    }
+                }
+
+                if (!keyFound)
+                {
+                    if (inTargetSection)
+                    {
+                        lines.Add($"{key}={value}");
+                    }
+                    else
+                    {
+                        lines.Add(sectionHeader);
+                        lines.Add($"{key}={value}");
+                    }
+                }
+
+                File.WriteAllLines(iniPath, lines);
+            }
+            catch
+            {
+                File.WriteAllText(iniPath, $"[{section}]\n{key}={value}\n");
+            }
+        }
+
+        private void InstallTrackedFile(string sourcePath, string gameDir, string backupDir, InstallationManifest manifest, string relativePath, string? logMessage = null)
+        {
+            var destPath = Path.Combine(gameDir, relativePath);
+            var destDir = Path.GetDirectoryName(destPath);
+
+            if (destDir != null && !Directory.Exists(destDir))
+            {
+                Directory.CreateDirectory(destDir);
+            }
+
+            if (File.Exists(destPath))
+            {
+                var backupPath = Path.Combine(backupDir, relativePath);
+                var backupSubDir = Path.GetDirectoryName(backupPath);
+                if (backupSubDir != null && !Directory.Exists(backupSubDir))
+                    Directory.CreateDirectory(backupSubDir);
+
+                if (!File.Exists(backupPath))
+                {
+                    File.Copy(destPath, backupPath);
+                    if (!manifest.BackedUpFiles.Contains(relativePath))
+                        manifest.BackedUpFiles.Add(relativePath);
+                    DebugWindow.Log($"[Install] Backed up existing file: {relativePath}");
+                }
+            }
+
+            File.Copy(sourcePath, destPath, true);
+            if (!manifest.InstalledFiles.Contains(relativePath))
+                manifest.InstalledFiles.Add(relativePath);
+
+            if (!string.IsNullOrEmpty(logMessage))
+                DebugWindow.Log(logMessage);
         }
     }
 }

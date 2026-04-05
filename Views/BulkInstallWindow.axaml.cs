@@ -49,15 +49,7 @@ public partial class BulkInstallWindow : Window
         _gameItems = new ObservableCollection<BulkGameItem>();
         _filteredGameItems = new ObservableCollection<BulkGameItem>();
 
-        // Initialize GPU service
-        if (OperatingSystem.IsWindows())
-        {
-            _gpuService = new WindowsGpuDetectionService();
-        }
-        else
-        {
-            _gpuService = null!;
-        }
+        _gpuService = new LinuxGpuDetectionService();
 
         // Populate games list
         foreach (var game in games.OrderBy(g => g.Name))
@@ -517,7 +509,7 @@ public partial class BulkInstallWindow : Window
 
         // Determine default selection
         bool isRdna4 = false;
-        if (OperatingSystem.IsWindows() && _gpuService != null)
+        if (_gpuService != null)
         {
             try
             {

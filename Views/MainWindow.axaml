@@ -359,8 +359,16 @@
                                                                     IsVisible="{Binding OptiscalerVersion, Converter={StaticResource NullToVisibilityConverter}}"/>
                                                      </StackPanel>
                                                  </Border>
-         
+
                                              </StackPanel>
+
+                                             <TextBlock Text="{Binding NoUpscalerWarningText}"
+                                                        IsVisible="{Binding NoUpscalerWarningText, Converter={StaticResource NullToVisibilityConverter}}"
+                                                        Margin="0,10,0,0"
+                                                        Foreground="{StaticResource BrAccentWarm}"
+                                                        FontSize="{StaticResource FontSizeCaption}"
+                                                        FontWeight="SemiBold"
+                                                        TextWrapping="Wrap"/>
                                          </StackPanel>
          
                                          <!-- Actions -->
